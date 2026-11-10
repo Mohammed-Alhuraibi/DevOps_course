@@ -17,7 +17,7 @@ LOGOS_FILE = os.path.join(HERE, "logos.json")
 # Simple Icons slugs available to every picture (https://simpleicons.org)
 LOGO_SLUGS = [
     "alpinelinux", "ansible", "cloudflare", "debian", "docker", "express", "git", "github",
-    "githubactions", "googlecloud", "letsencrypt", "linux", "nginx", "nodedotjs",
+    "githubactions", "googlecloud", "kubernetes", "letsencrypt", "linux", "nginx", "nodedotjs",
     "postgresql", "vite",
 ]
 
