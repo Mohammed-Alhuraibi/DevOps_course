@@ -108,6 +108,6 @@ Everything else is in the console (<https://console.cloud.google.com>):
 | create the cluster (**Standard**, see [Stage 0](stages/stage-0-create-the-cluster.md#1-create-the-cluster-in-the-console)) | Kubernetes Engine → Clusters → Create |
 | see nodes, pods, Services and the Ingress | Kubernetes Engine → Clusters → bugsquash → Nodes; Kubernetes Engine → Workloads; Kubernetes Engine → Gateways, Services & Ingress |
 | reserve or release the static IP | VPC network → IP addresses |
-| stop or start a node | Compute Engine → VM instances → tick the VM → Stop, or Start / Resume |
+| stop or start a node | Compute Engine → **Instance groups** → the node's `…-grp` → tick the VM → Stop, or Start |
 | see the database disk and the load balancer | Compute Engine → Storage → Disks; Network services → Load balancing |
 | delete the cluster (after `kubectl delete namespace bugsquash`) | Kubernetes Engine → Clusters → bugsquash → Delete |

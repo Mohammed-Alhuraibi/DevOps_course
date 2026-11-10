@@ -74,13 +74,20 @@ open in your browser, too.
 
 Why: a node is a VM, and stopping it is the closest thing to a power cut in one data centre.
 
-In the console, **Compute Engine → VM instances**: tick the VM named `<NODE>` (all three start with
-`gke-bugsquash-default-pool-`; check that the **Zone** column says `<ZONE>`), click **Stop** and
-confirm. Ours was `gke-bugsquash-default-pool-34ca6972-2bt9` in `europe-central2-a`.
+Each node VM belongs to an **instance group** (GKE makes one per zone, named like the VM plus
+`-grp`). Stop the VM *through its group*, so the group knows the stop is on purpose: from the VM's
+own page the console greys out **Stop**, and a VM stopped there may be started again by its group.
+
+In the console, **Compute Engine → Instance groups**: click the group of `<NODE>` (for
+`gke-bugsquash-default-pool-901697e1-wvg9` it is `gke-bugsquash-default-pool-901697e1-grp`), tick
+the VM in its list, click **Stop** and confirm. The same with a command:
+
+```console
+laptop$ gcloud compute instance-groups managed stop-instances <GROUP> --instances=<NODE> --zone=<ZONE>
+```
 
 You should see its status change to *Stopping*, then *Stopped* after about 2 minutes (1m47s for us).
-Watch the loop in the second window meanwhile. The same with a command:
-`gcloud compute instances stop <NODE> --zone <ZONE>`.
+Watch the loop in the second window meanwhile.
 
 ## 5. Watch Kubernetes react
 
@@ -116,8 +123,8 @@ checks noticed. After that, 100% were answered by the other two zones; the game 
 Why: a returning node comes back empty. Kubernetes places pods only when it creates them; it never
 moves running pods back by itself.
 
-In **Compute Engine → VM instances**, tick the same VM and click **Start / Resume** (or
-`gcloud compute instances start <NODE> --zone <ZONE>`). Then, in your terminal, repeat `get nodes`
+On the same **Instance groups** page, tick the VM and click **Start** (or the command above with
+`start-instances` instead of `stop-instances`). Then, in your terminal, repeat `get nodes`
 until all three are `Ready` (about a minute after the start), and only then restart:
 
 ```console
@@ -163,6 +170,7 @@ Next: the padlock, then cleanup. [Stage 10: HTTPS and wrap-up](stage-10-https-an
 
 | Symptom | Fix |
 |---------|-----|
+| **Stop** is greyed out on the VM's page (*To stop a VM instance managed by a group, visit the instance group details page*), or the stopped node comes back by itself | Stop it through its group: **Compute Engine → Instance groups** → the `…-grp` of that VM → tick the VM → **Stop** (step 4). |
 | The loop shows only errors (`502`, `503`) after the stop | You stopped the database's node: start it again (step 6); the API recovers about a minute later. |
 | Pods on the stopped node still show `Running` | Kubernetes needs about a minute to notice the node, then waits 30 seconds: run the command again. |
 | Replacement pods stay `Pending` | The other nodes are full: `kubectl describe pod <POD_NAME>`. They start once the node is back. |
