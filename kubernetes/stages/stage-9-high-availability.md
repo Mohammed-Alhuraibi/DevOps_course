@@ -1,6 +1,6 @@
-# 9. High availability
+# Stage 9: High availability
 
-[Lesson map](README.md) · [← 8. Rolling updates](08-rolling-updates.md) · **9. High availability** · [10. HTTPS and wrap-up →](10-https-and-wrap-up.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 8](stage-8-rolling-updates.md) · **Stage 9** · [Stage 10 →](stage-10-https-and-wrap-up.md)
 
 This is the demo the whole lesson builds up to. The game runs in three zones; now one machine is
 switched off in the middle of the class while a loop keeps calling the API. Kubernetes and Google's
@@ -9,7 +9,7 @@ load balancer have one job: make sure visitors barely notice.
 **By the end:** you have stopped a node, counted the failed requests (a handful, all in the first
 seconds), brought the node back and spread the pods out again.
 
-![High availability: frontend and backend pods are spread over zones a, b and c behind the Google load balancer, which sends visitors only to ready pods; the instructor stops the node in zone b and, after about 30 seconds, Kubernetes re-creates its two pods on the nodes in zones a and c; the control plane is replicated by Google in all three zones; the honest weak spot is the single Postgres pod with its disk in one zone, so stop a node in another zone, and use Cloud SQL in production](images/slides/k8s-10-high-availability.svg)
+![High availability: frontend and backend pods are spread over zones a, b and c behind the Google load balancer, which sends visitors only to ready pods; the instructor stops the node in zone b and, after about 30 seconds, Kubernetes re-creates its two pods on the nodes in zones a and c; the control plane is replicated by Google in all three zones; the honest weak spot is the single Postgres pod with its disk in one zone, so stop a node in another zone, and use Cloud SQL in production](../images/slides/k8s-10-high-availability.svg)
 
 ## 1. Check the spread
 
@@ -44,7 +44,7 @@ a had no pods at all). `nodeTaintsPolicy: Honor` leaves broken nodes out, so pod
 
 ## 2. Find the database's zone
 
-Why: the database is one pod on a disk that lives in one zone (page 6). Stop *its* node and the API
+Why: the database is one pod on a disk that lives in one zone (Stage 6). Stop *its* node and the API
 has to wait; stop any other and nobody should notice.
 
 ```console
@@ -60,7 +60,7 @@ steps call them `<NODE>` and `<ZONE>`.
 
 Why: this time call the API, which needs the whole chain: load balancer, backend and database.
 
-In the second terminal window (page 8; open a new one if you closed it):
+In the second terminal window (Stage 8; open a new one if you closed it):
 
 ```console
 laptop$ IP=<your IP>
@@ -157,7 +157,7 @@ copies itself across zones: Cloud SQL, or a replicated database.
   elsewhere, and `rollout restart` spread them again after it returned.
 - Google runs the control plane in all three zones; the single database is the weak spot.
 
-Next: the padlock, then cleanup. [10. HTTPS and wrap-up](10-https-and-wrap-up.md).
+Next: the padlock, then cleanup. [Stage 10: HTTPS and wrap-up](stage-10-https-and-wrap-up.md).
 
 ## Troubleshooting
 
@@ -166,5 +166,5 @@ Next: the padlock, then cleanup. [10. HTTPS and wrap-up](10-https-and-wrap-up.md
 | The loop shows only errors (`502`, `503`) after the stop | You stopped the database's node: start it again (step 6); the API recovers about a minute later. |
 | Pods on the stopped node still show `Running` | Kubernetes needs about a minute to notice the node, then waits 30 seconds: run the command again. |
 | Replacement pods stay `Pending` | The other nodes are full: `kubectl describe pod <POD_NAME>`. They start once the node is back. |
-| `kubectl exec toolbox` fails after the demo | The toolbox lived on that node, and a lone pod is never replaced (page 2): `kubectl delete pod toolbox`, then [page 4, step 3](04-services.md#3-start-a-toolbox-pod). |
+| `kubectl exec toolbox` fails after the demo | The toolbox lived on that node, and a lone pod is never replaced (Stage 2): `kubectl delete pod toolbox`, then [Stage 4, step 3](stage-4-services.md#3-start-a-toolbox-pod). |
 | Not sure which VM is which | The VM names are the node names of `kubectl get nodes`; the **Zone** column matches step 1. |

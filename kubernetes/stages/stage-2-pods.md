@@ -1,6 +1,6 @@
-# 2. Pods
+# Stage 2: Pods
 
-[Lesson map](README.md) · [← 1. The big picture](01-the-big-picture.md) · **2. Pods** · [3. Deployments →](03-deployments.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 1](stage-1-explore-the-cluster.md) · **Stage 2** · [Stage 3 →](stage-3-deployments.md)
 
 In the Docker lesson you started containers with `docker run`. Kubernetes never runs a bare
 container: it wraps it in a *pod*, gives the pod its own IP address and chooses a node for it. You
@@ -10,7 +10,7 @@ that: nothing.
 **By the end:** you have run the Bug Squash frontend as a pod, seen it in your browser, and know why
 a lone pod is not enough.
 
-![Pods: a pod is the shell around one container, like a pea pod around its pea, with an optional helper container and its own IP address; 01-pod.yaml shows the four parts of every Kubernetes file: apiVersion and kind say what it is, metadata gives the name hello-frontend and the label app: hello, spec says what you want, the frontend image sha-0902b98 on port 8080; kubectl delete pod hello-frontend removes it for good, because a lone pod is never brought back](images/slides/k8s-03-pods.svg)
+![Pods: a pod is the shell around one container, like a pea pod around its pea, with an optional helper container and its own IP address; 01-pod.yaml shows the four parts of every Kubernetes file: apiVersion and kind say what it is, metadata gives the name hello-frontend and the label app: hello, spec says what you want, the frontend image sha-0902b98 on port 8080; kubectl delete pod hello-frontend removes it for good, because a lone pod is never brought back](../images/slides/k8s-03-pods.svg)
 
 ## 1. Read the file
 
@@ -120,7 +120,7 @@ Forwarding from [::1]:8080 -> 8080
 
 Now open <http://localhost:8080> in your browser: the Bug Squash home page, served by the pod in
 Warsaw. The terminal prints `Handling connection for 8080` for each request. The footer says
-**Web 0902b98** and **API unreachable**: no backend yet (page 6). Press **Ctrl+C** in the terminal
+**Web 0902b98** and **API unreachable**: no backend yet (Stage 6). Press **Ctrl+C** in the terminal
 to close the tunnel.
 
 ## 6. Delete it
@@ -153,7 +153,7 @@ would be lost the same way). Watching over pods is the job of the next page.
 - `get -o wide`, `describe`, `logs`, `exec` and `port-forward` are your five everyday tools.
 - A deleted pod is never replaced.
 
-Next: let Kubernetes keep pods alive for you. [3. Deployments](03-deployments.md).
+Next: let Kubernetes keep pods alive for you. [Stage 3: Deployments](stage-3-deployments.md).
 
 ## Troubleshooting
 

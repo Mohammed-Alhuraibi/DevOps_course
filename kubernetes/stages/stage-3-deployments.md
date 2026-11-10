@@ -1,6 +1,6 @@
-# 3. Deployments
+# Stage 3: Deployments
 
-[Lesson map](README.md) · [← 2. Pods](02-pods.md) · **3. Deployments** · [4. Services →](04-services.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 2](stage-2-pods.md) · **Stage 3** · [Stage 4 →](stage-4-services.md)
 
 A lone pod dies alone. A Deployment is a promise: "always keep three copies of this pod running".
 A controller compares that promise with reality every few seconds and fixes any difference. You
@@ -9,7 +9,7 @@ break things on purpose and watch it repair them.
 **By the end:** three frontend pods, one per node, that come back when you delete one, and you know
 why the file always wins.
 
-![Deployments: the Deployment frontend with replicas: 3 owns a ReplicaSet that owns three pods; when one crashes, the controller starts a new copy, because its control loop compares the desired state, 3 copies from your YAML, with the actual state, 2 running, every few seconds and fixes the difference; kubectl scale deployment frontend --replicas=5 changes the goal to five copies](images/slides/k8s-04-deployments.svg)
+![Deployments: the Deployment frontend with replicas: 3 owns a ReplicaSet that owns three pods; when one crashes, the controller starts a new copy, because its control loop compares the desired state, 3 copies from your YAML, with the actual state, 2 running, every few seconds and fixes the difference; kubectl scale deployment frontend --replicas=5 changes the goal to five copies](../images/slides/k8s-04-deployments.svg)
 
 ## 1. Apply the Deployment
 
@@ -61,7 +61,7 @@ frontend-d6d8d8454-zvd9c   gke-bugsquash-default-pool-7204075e-xh1n   Running
 ```
 
 A pod's name is the Deployment's name, the ReplicaSet's suffix and a random part. One pod landed on
-each node, so in each zone: a spread rule at the bottom of the file asks for that (page 9).
+each node, so in each zone: a spread rule at the bottom of the file asks for that (Stage 9).
 
 ## 3. Kill a pod
 
@@ -86,7 +86,7 @@ frontend-d6d8d8454-zvd9c   1/1     Running   0          10s
 ```
 
 The deleted pod may also still be listed as `Terminating` for about 15 seconds: it finishes the
-requests it is serving before it stops (page 8 explains that pause).
+requests it is serving before it stops (Stage 8 explains that pause).
 
 ## 4. Scale up
 
@@ -145,13 +145,13 @@ If two extra pods still show `Terminating`, that is the 15-second pause again; r
 - `kubectl scale` changes the number right now; `kubectl apply -f` puts the file's number back.
 - The pods are spread one per node.
 
-Next: three pods with IPs that change all the time. How do you call them? [4. Services](04-services.md).
+Next: three pods with IPs that change all the time. How do you call them? [Stage 4: Services](stage-4-services.md).
 
 <details>
 <summary>Going deeper</summary>
 
 - **Why a ReplicaSet in between?** Every version of the pod template gets its own ReplicaSet. That
-  is what lets a Deployment update one pod at a time and go back to an old version (page 8).
+  is what lets a Deployment update one pod at a time and go back to an old version (Stage 8).
 - **The rest of the file:** the probes are Docker's healthcheck ("send visitors?", "restart it?"),
   and `resources` are Compose's limits, the cgroups of the Docker lesson.
 
@@ -162,6 +162,6 @@ Next: three pods with IPs that change all the time. How do you call them? [4. Se
 | Symptom | Fix |
 |---------|-----|
 | `Error from server (NotFound): pods "frontend-d6d8d8454-n9pwz" not found` | That is our pod's name: copy one from your own `kubectl get pods`. |
-| A pod stays `Terminating` for a while | Normal: every frontend pod waits 15 seconds before it stops (page 8). |
+| A pod stays `Terminating` for a while | Normal: every frontend pod waits 15 seconds before it stops (Stage 8). |
 | A new pod stays `Pending` | `kubectl describe pod <POD_NAME>`: the events say why, usually that no node has room or the spread rule waits for one. |
 | `rollout status` times out | `kubectl get pods`, then `kubectl describe pod <POD_NAME>` for the one that isn't `Running`. |

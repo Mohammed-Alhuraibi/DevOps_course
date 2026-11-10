@@ -123,7 +123,7 @@ to a Kubernetes cluster on Google Cloud.
 │   ├── systemd/                 bugsquash-tls-renew.service + .timer: renewal twice a day
 │   └── deploy.sh                Stage 4: pull, up --wait, reload the proxy, smoke tests, prune
 ├── ansible/                     Stage 5 code: provision.sh, site.yml, backup.yml, roles/
-└── kubernetes/                  Part 6: the Kubernetes lesson (pages, manifests/, images/)
+└── kubernetes/                  Part 6: concepts.md (theory), stages/ (hands-on), manifests/, images/
 ```
 
 Every config file is heavily commented on purpose: the comments explain *why* each line is there.
@@ -590,10 +590,16 @@ docker stats --no-stream                  # memory against the cgroup limits
 
 The same game, the same images, now on a **regional Google Kubernetes Engine (GKE) cluster** at
 `k8s.gulfheight.com`: three copies in three zones, self-healing, rolling updates without downtime, and a
-live demo where a worker node is switched off and the site keeps working. Eleven short pages, each with
-one slide and hands-on steps in Google Cloud Shell; about two hours.
+live demo where a worker node is switched off and the site keeps working. Concept slides first, then eleven short hands-on stages
+in your laptop's terminal and the Google Cloud console.
 
-Start at **[kubernetes/README.md](kubernetes/README.md)**. Prerequisite: [Containers and Docker](docs/containers-and-docker.md).
+Same rhythm as the Docker part: **theory first, then hands-on.**
+
+1. **[Kubernetes concepts](kubernetes/concepts.md)**: eleven slides, one idea each (about 25 minutes).
+2. **[The hands-on stages](kubernetes/README.md#the-lesson-in-two-parts)**: Stage 0 (create the cluster) to
+   Stage 10 (HTTPS and cleanup), each with Bug Squash Arena on a real cluster.
+
+Prerequisite: [Containers and Docker](docs/containers-and-docker.md).
 
 ## Part 7: Troubleshooting
 

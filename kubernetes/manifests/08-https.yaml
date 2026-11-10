@@ -1,7 +1,7 @@
-# Page 07/10 (part 1) - ask Google for an HTTPS certificate.
+# Stage 7/10 (part 1) - ask Google for an HTTPS certificate.
 # No certbot this time: a ManagedCertificate asks Google to issue (and
 # renew) a certificate for k8s.gulfheight.com. Google can only do that once
-# the name points to our load balancer's IP (the DNS record of page 07), and
+# the name points to our load balancer's IP (the DNS record of Stage 7), and
 # it takes 15-60 minutes. The site keeps working on plain HTTP meanwhile.
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
@@ -11,7 +11,7 @@ spec:
   domains:
     - k8s.gulfheight.com
 ---
-# The Ingress of page 07, plus ONE annotation that attaches the certificate.
+# The Ingress of Stage 7, plus ONE annotation that attaches the certificate.
 # "kubectl apply" updates the existing Ingress in place.
 apiVersion: networking.k8s.io/v1
 kind: Ingress

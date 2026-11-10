@@ -1,6 +1,6 @@
-# 6. Storage and the backend
+# Stage 6: Storage and the backend
 
-[Lesson map](README.md) · [← 5. ConfigMaps and Secrets](05-configmaps-and-secrets.md) · **6. Storage and the backend** · [7. Ingress →](07-ingress.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 5](stage-5-configmaps-and-secrets.md) · **Stage 6** · [Stage 7 →](stage-7-ingress.md)
 
 Pods are disposable: delete one and its files are gone. Fine for the frontend, fatal for a database.
 The fix is the idea behind Docker's volumes: the data lives on a disk outside the pod, and the next
@@ -9,12 +9,12 @@ pod plugs into the same disk. Then the backend joins, and the game gets its API.
 **By the end:** Postgres runs on a 5 GiB Google disk, three backend pods answer, and a player called
 `survivor` outlives the database pod.
 
-![Storage: the deleted postgres pod and its replacement both show the PersistentVolumeClaim postgres-data, 5 GiB, ReadWriteOnce, bound to a PersistentVolume that is a Google Persistent Disk living outside every pod; like a cloakroom, the claim is the ticket, the volume is the coat and any pod with the ticket gets the same coat back; ReadWriteOnce means one node writes at a time, so the database runs as one pod with the Recreate strategy](images/slides/k8s-07-storage.svg)
+![Storage: the deleted postgres pod and its replacement both show the PersistentVolumeClaim postgres-data, 5 GiB, ReadWriteOnce, bound to a PersistentVolume that is a Google Persistent Disk living outside every pod; like a cloakroom, the claim is the ticket, the volume is the coat and any pod with the ticket gets the same coat back; ReadWriteOnce means one node writes at a time, so the database runs as one pod with the Recreate strategy](../images/slides/k8s-07-storage.svg)
 
 ## 1. Start the database
 
 Why: one file, three objects: a disk claim, one Postgres pod and the Service `postgres` that the
-backend calls (`PGHOST`, page 5).
+backend calls (`PGHOST`, Stage 5).
 
 ```console
 laptop$ kubectl apply -f manifests/05-postgres.yaml
@@ -57,7 +57,7 @@ NAME                        READY   STATUS    RESTARTS   AGE   IP           NODE
 postgres-5b5cd498df-jb9nd   1/1     Running   0          24s   10.76.0.11   gke-bugsquash-default-pool-23acb34b-32v4
 ```
 
-Remember that node: on page 9 it matters where the database lives.
+Remember that node: on Stage 9 it matters where the database lives.
 
 **Look in the console:** **Compute Engine → Storage → Disks** shows the volume as an ordinary 5 GB
 disk named `pvc-4306735b-…`, in one zone only: the zone of the database's node.
@@ -142,13 +142,13 @@ uses that endpoint, so a longer outage would make Kubernetes stop sending visito
 - Three backend pods run, and `/api/health` answers `ok`.
 - `survivor` could log in after the database pod was replaced.
 
-Next: everything works, but only inside the cluster. Time for a public door: [7. Ingress](07-ingress.md).
+Next: everything works, but only inside the cluster. Time for a public door: [Stage 7: Ingress](stage-7-ingress.md).
 
 <details>
 <summary>Going deeper</summary>
 
 - `RECLAIM POLICY: Delete`: delete the claim and Google deletes the disk, data included. The cleanup
-  on page 10 relies on that.
+  on Stage 10 relies on that.
 
 </details>
 
@@ -160,4 +160,4 @@ Next: everything works, but only inside the cluster. Time for a public door: [7.
 | Backend pods stay `0/1`, their logs mention `password authentication failed` | The Secret was recreated after Postgres first started, and Postgres keeps its first password. `kubectl delete deployment postgres`, `kubectl delete pvc postgres-data` (erases the data), apply `05-postgres.yaml` again. |
 | `{"error":"That username is already taken"}` | You signed up before: go on with step 5. |
 | `/api/health` returns `503` for more than a minute | `kubectl get pods -l app=postgres`, then `kubectl logs deployment/postgres`. |
-| `pods "toolbox" not found` | Create it: [page 4, step 3](04-services.md#3-start-a-toolbox-pod). |
+| `pods "toolbox" not found` | Create it: [Stage 4, step 3](stage-4-services.md#3-start-a-toolbox-pod). |

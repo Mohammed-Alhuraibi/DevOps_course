@@ -1,6 +1,6 @@
-# 5. ConfigMaps and Secrets
+# Stage 5: ConfigMaps and Secrets
 
-[Lesson map](README.md) · [← 4. Services](04-services.md) · **5. ConfigMaps and Secrets** · [6. Storage and the backend →](06-storage-and-the-backend.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 4](stage-4-services.md) · **Stage 5** · [Stage 6 →](stage-6-storage-and-the-backend.md)
 
 In the Docker stages the settings lived in `.env.prod` on the VM, next to the images, never inside
 them. Kubernetes splits that file in two: a ConfigMap for the plain settings and a Secret for the
@@ -9,7 +9,7 @@ passwords. The images stay exactly the same.
 **By the end:** the cluster holds the backend's settings and two random secrets, and you have seen
 with your own eyes why a Secret is not a safe.
 
-![ConfigMaps and Secrets: the .env.prod file of the Docker stages splits into the ConfigMap bugsquash-config with the plain settings NODE_ENV, COOKIE_SECURE, TRUST_PROXY, POSTGRES_DB, PGHOST, PGPORT, PGUSER and PGDATABASE, and the Secret bugsquash-secrets with POSTGRES_PASSWORD and JWT_SECRET; the unchanged backend image gets every ConfigMap key through envFrom, and PGPASSWORD and JWT_SECRET from the Secret, all as environment variables; a Secret is base64, not encryption: echo c2VjcmV0 | base64 -d prints secret](images/slides/k8s-06-configmaps-and-secrets.svg)
+![ConfigMaps and Secrets: the .env.prod file of the Docker stages splits into the ConfigMap bugsquash-config with the plain settings NODE_ENV, COOKIE_SECURE, TRUST_PROXY, POSTGRES_DB, PGHOST, PGPORT, PGUSER and PGDATABASE, and the Secret bugsquash-secrets with POSTGRES_PASSWORD and JWT_SECRET; the unchanged backend image gets every ConfigMap key through envFrom, and PGPASSWORD and JWT_SECRET from the Secret, all as environment variables; a Secret is base64, not encryption: echo c2VjcmV0 | base64 -d prints secret](../images/slides/k8s-06-configmaps-and-secrets.svg)
 
 ## 1. Apply the settings
 
@@ -45,9 +45,9 @@ NAME               DATA   AGE
 bugsquash-config   10     1s
 ```
 
-Four of them come back later: `PGHOST: postgres` is the name of the database's Service (page 6),
-`TRUST_PROXY` and `AUTH_RATE_LIMIT_MAX` matter behind Google's load balancer (page 7), and
-`COOKIE_SECURE` turns `"true"` once the site has HTTPS (page 10).
+Four of them come back later: `PGHOST: postgres` is the name of the database's Service (Stage 6),
+`TRUST_PROXY` and `AUTH_RATE_LIMIT_MAX` matter behind Google's load balancer (Stage 7), and
+`COOKIE_SECURE` turns `"true"` once the site has HTTPS (Stage 10).
 
 ## 2. Create the Secret
 
@@ -127,7 +127,7 @@ two names, one for Postgres and one for the backend.
 - Settings live outside the image, and the secrets live outside Git.
 - Anyone who may read a Secret can decode it: base64 is not encryption.
 
-Next: a database that keeps its data, and the backend that uses it. [6. Storage and the backend](06-storage-and-the-backend.md).
+Next: a database that keeps its data, and the backend that uses it. [Stage 6: Storage and the backend](stage-6-storage-and-the-backend.md).
 
 <details>
 <summary>Going deeper</summary>
@@ -136,7 +136,7 @@ Next: a database that keeps its data, and the backend that uses it. [6. Storage 
   Google account's IAM role (Owner, Editor, ...) decides it too.
 - **Secrets in Git, safely:** tools such as Sealed Secrets or the External Secrets Operator (with
   Google Secret Manager) keep only an encrypted or a reference version in the repository.
-- **Changing a setting later** does not restart the pods that already read it. Page 10 shows what to
+- **Changing a setting later** does not restart the pods that already read it. Stage 10 shows what to
   do about that.
 
 </details>
@@ -145,6 +145,6 @@ Next: a database that keeps its data, and the backend that uses it. [6. Storage 
 
 | Symptom | Fix |
 |---------|-----|
-| `secrets "bugsquash-secrets" already exists` | You created it before: keep it. Recreating it after Postgres has started breaks the login to the database (page 6, troubleshooting). |
+| `secrets "bugsquash-secrets" already exists` | You created it before: keep it. Recreating it after Postgres has started breaks the login to the database (Stage 6, troubleshooting). |
 | `base64: invalid input` | Keep the `-o jsonpath='{.data.JWT_SECRET}'` part: it picks one value. |
 | `error: exactly one NAME is required, got 2` | The line breaks of the `create secret` command got lost: copy it again, `\` must be the last character of each line. |

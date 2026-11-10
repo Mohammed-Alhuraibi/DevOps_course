@@ -1,10 +1,10 @@
 # Kubernetes cheat sheet
 
-[Lesson map](README.md) · [← 10. HTTPS and wrap-up](10-https-and-wrap-up.md)
+[Lesson map](README.md) · [← Stage 10](stages/stage-10-https-and-wrap-up.md)
 
 The everyday commands of this lesson, ready to copy. Run them in your laptop's terminal from the
 `DevOps_course/kubernetes` folder. Replace `<POD_NAME>` with a name from `kubectl get pods`.
-The namespace is already `bugsquash` ([page 0, step 6](00-create-the-cluster.md#6-create-the-namespace)).
+The namespace is already `bugsquash` ([Stage 0, step 6](stages/stage-0-create-the-cluster.md#6-create-the-namespace)).
 
 ## Look
 
@@ -56,7 +56,7 @@ kubectl logs -l app=backend --prefix --since=10m
 # A shell inside a pod (exit with: exit)
 kubectl exec -it <POD_NAME> -- sh
 
-# Call a Service from inside the cluster (the toolbox pod of page 4)
+# Call a Service from inside the cluster (the toolbox pod of Stage 4)
 kubectl exec toolbox -- curl -s http://backend:3000/api/health
 
 # A private tunnel to a pod: then open http://localhost:8080 (Ctrl+C to stop)
@@ -105,7 +105,7 @@ Everything else is in the console (<https://console.cloud.google.com>):
 
 | You want to | Where |
 |-------------|-------|
-| create the cluster (**Standard**, see [page 0](00-create-the-cluster.md#1-create-the-cluster-in-the-console)) | Kubernetes Engine → Clusters → Create |
+| create the cluster (**Standard**, see [Stage 0](stages/stage-0-create-the-cluster.md#1-create-the-cluster-in-the-console)) | Kubernetes Engine → Clusters → Create |
 | see nodes, pods, Services and the Ingress | Kubernetes Engine → Clusters → bugsquash → Nodes; Kubernetes Engine → Workloads; Kubernetes Engine → Gateways, Services & Ingress |
 | reserve or release the static IP | VPC network → IP addresses |
 | stop or start a node | Compute Engine → VM instances → tick the VM → Stop, or Start / Resume |

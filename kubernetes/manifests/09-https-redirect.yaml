@@ -1,5 +1,5 @@
-# Page 10 (part 2) - ONLY once the certificate is "Active": send every
-# http:// visitor to https:// (like the 301 of Stage 3). Applying this
+# Stage 10 (part 2) - ONLY once the certificate is "Active": send every
+# http:// visitor to https:// (like the 301 of Docker Stage 3). Applying this
 # before the certificate exists would redirect visitors to a broken page.
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig

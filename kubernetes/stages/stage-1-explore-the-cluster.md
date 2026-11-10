@@ -1,22 +1,14 @@
-# 1. The big picture
+# Stage 1: Explore the cluster
 
-[Lesson map](README.md) · [← 0. Create the cluster](00-create-the-cluster.md) · **1. The big picture** · [2. Pods →](02-pods.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 0](stage-0-create-the-cluster.md) · **Stage 1** · [Stage 2 →](stage-2-pods.md)
 
-On one VM *you* are the safety net: when the VM dies, the site dies, and you bring it back by hand.
-On a cluster you write down what you want, and Kubernetes keeps it true, day and night. Two slides
-explain how; three commands find both halves of the cluster you just rented.
+In the [concepts](../concepts.md#2-brain-and-workers) you met the two halves of every cluster: the
+brain (the control plane) and the workers (the nodes). Your cluster from Stage 0 is running, so now
+find both halves in it with three read-only commands.
 
-**By the end:** you can name the two halves of a cluster, the brain and the workers, and point at
-each of them in your own.
+**By the end:** you can point at the brain and at each worker of your own cluster.
 
-![Why Kubernetes: with Docker Compose on one VM the site dies with the VM, and scaling and updates are done by hand with brief downtime; a Kubernetes cluster spreads pods over three machines, starts a new pod when one dies, scales from 3 to 5 copies with one line and updates one pod at a time; like a thermostat set to 21 degrees, you write replicas: 3 and Kubernetes keeps 3 copies running](images/slides/k8s-01-why-kubernetes.svg)
-
-![The cluster as a restaurant: the control plane is the manager, run by Google on GKE, with the API server as the front desk every request goes through, the scheduler that picks a node for every new pod, the controller manager that keeps reality equal to the plan, and etcd, the notebook with the whole cluster's state; kubectl on your laptop talks only to the API server; three worker nodes are the cooks, each with a kubelet that follows the manager's orders, containerd that runs the containers and kube-proxy that routes Service traffic](images/slides/k8s-02-brain-and-workers.svg)
-
-> [!NOTE]
-> **A thermostat.** You don't tell a thermostat "heat for ten minutes"; you set 21 °C and it keeps
-> checking and correcting. Kubernetes works the same way: you write *what* you want (three copies),
-> and its controllers keep comparing that with reality and fix every difference.
+![The cluster as a restaurant: the control plane is the manager, run by Google on GKE, with the API server as the front desk every request goes through, the scheduler that picks a node for every new pod, the controller manager that keeps reality equal to the plan, and etcd, the notebook with the whole cluster's state; kubectl on your laptop talks only to the API server; three worker nodes are the cooks, each with a kubelet that follows the manager's orders, containerd that runs the containers and kube-proxy that routes Service traffic](../images/slides/k8s-02-brain-and-workers.svg)
 
 ## 1. Meet the workers
 
@@ -41,7 +33,7 @@ which starts the containers.
 **Look in the console:** **Kubernetes Engine → Clusters → bugsquash → Nodes** shows the same three
 nodes, and **Compute Engine → VM instances** shows them as three ordinary VMs called
 `gke-bugsquash-default-pool-…`, the same kind as the course VM. Never change them by hand: GKE
-manages them (page 9 stops one on purpose).
+manages them (Stage 9 stops one on purpose).
 
 ## 2. Find the brain
 
@@ -84,7 +76,7 @@ gke-metrics-agent-r7g8r                               3/3     Running           
 `-n kube-system` looks into another namespace for this one command; your default stays `bugsquash`.
 
 > [!TIP]
-> One of these helpers is the cluster's DNS, which page 4 relies on. On a brand-new cluster it may
+> One of these helpers is the cluster's DNS, which Stage 4 relies on. On a brand-new cluster it may
 > need a minute or two: if a name lookup fails at first, wait a minute and try again.
 
 ## Checkpoint
@@ -93,7 +85,7 @@ gke-metrics-agent-r7g8r                               3/3     Running           
 - Your three nodes are in zones a, b and c.
 - You describe what you want; Kubernetes keeps reality equal to it.
 
-Next: the smallest thing Kubernetes runs. [2. Pods](02-pods.md).
+Next: the smallest thing Kubernetes runs. [Stage 2: Pods](stage-2-pods.md).
 
 <details>
 <summary>Going deeper</summary>
@@ -108,5 +100,5 @@ Next: the smallest thing Kubernetes runs. [2. Pods](02-pods.md).
 | Symptom | Fix |
 |---------|-----|
 | A node shows `NotReady` | The cluster is still finishing: wait a minute and run the command again. |
-| `The connection to the server localhost:8080 was refused` | kubectl has no cluster: run the **Connect** command of [page 0, step 4](00-create-the-cluster.md#4-connect-kubectl-to-the-cluster). |
+| `The connection to the server localhost:8080 was refused` | kubectl has no cluster: run the **Connect** command of [Stage 0, step 4](stage-0-create-the-cluster.md#4-connect-kubectl-to-the-cluster). |
 | `kube-system` pods still not `Running` after 5 minutes | `kubectl get events -n kube-system --sort-by=.lastTimestamp \| tail` shows what they are waiting for. |

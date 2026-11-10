@@ -1,6 +1,6 @@
-# 7. Ingress
+# Stage 7: Ingress
 
-[Lesson map](README.md) · [← 6. Storage and the backend](06-storage-and-the-backend.md) · **7. Ingress** · [8. Rolling updates →](08-rolling-updates.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 6](stage-6-storage-and-the-backend.md) · **Stage 7** · [Stage 8 →](stage-8-rolling-updates.md)
 
 Everything runs, but only inside the cluster. In the Docker stages one nginx proxy was the only
 container with public ports. On GKE that job goes to an Ingress: you write a few lines of routing
@@ -10,14 +10,14 @@ you start it first and talk while it builds.
 **By the end:** you play Bug Squash at `http://<your IP>` in your browser, and the backend's logs show
 your own public IP.
 
-![Ingress: the browser at k8s.gulfheight.com reaches a Google Cloud load balancer with the static IP bugsquash-ip, made from the Ingress bugsquash, the one public door; /api, the API calls from the game, goes to the Service backend:3000 and its three pods, and /, the HTML, CSS and JS files, to the Service frontend:8080 and its three pods; it is the job the nginx proxy did in the Docker stages, and Google issues and renews the HTTPS certificate instead of certbot](images/slides/k8s-08-ingress.svg)
+![Ingress: the browser at k8s.gulfheight.com reaches a Google Cloud load balancer with the static IP bugsquash-ip, made from the Ingress bugsquash, the one public door; /api, the API calls from the game, goes to the Service backend:3000 and its three pods, and /, the HTML, CSS and JS files, to the Service frontend:8080 and its three pods; it is the job the nginx proxy did in the Docker stages, and Google issues and renews the HTTPS certificate instead of certbot](../images/slides/k8s-08-ingress.svg)
 
 ## 1. Check your static IP
 
 Why: the Ingress asks for the address by its name, `bugsquash-ip`; without it there is no load balancer.
 
 **Look in the console:** **VPC network → IP addresses** must list `bugsquash-ip`, type *Global*.
-Missing? Reserve it ([page 0, step 2](00-create-the-cluster.md#2-reserve-a-static-ip-in-the-console)).
+Missing? Reserve it ([Stage 0, step 2](stage-0-create-the-cluster.md#2-reserve-a-static-ip-in-the-console)).
 Then keep its address in a variable of your terminal, for the commands below:
 
 ```console
@@ -110,7 +110,7 @@ login limit. With it, every visitor has a limit of their own: 500 attempts per 1
 
 ## 7. (Optional) Start HTTPS now
 
-Why: Google's certificate takes 15-60 minutes, so ask for it now and finish on page 10. You need a
+Why: Google's certificate takes 15-60 minutes, so ask for it now and finish on Stage 10. You need a
 domain you control (the course uses `k8s.gulfheight.com`). No domain? Skip this step.
 
 In Cloudflare, *DNS → Records → Add record*: type `A`, name `k8s`, IPv4 address = your IP,
@@ -138,7 +138,7 @@ The site keeps working on plain HTTP in the meantime.
 - `http://<your IP>` serves the game, and `/api` reaches the backend.
 - The backend logs your real public IP.
 
-Next: ship a new version while people play. [8. Rolling updates](08-rolling-updates.md).
+Next: ship a new version while people play. [Stage 8: Rolling updates](stage-8-rolling-updates.md).
 
 <details>
 <summary>Going deeper</summary>

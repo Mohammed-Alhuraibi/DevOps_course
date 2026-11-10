@@ -1,4 +1,4 @@
-# Page 03 - a DEPLOYMENT: "always keep 3 copies of this pod running".
+# Stage 3 - a DEPLOYMENT: "always keep 3 copies of this pod running".
 # You describe the goal; a controller compares it with reality every few
 # seconds and fixes any difference (a pod died? it starts a new one).
 apiVersion: apps/v1
@@ -37,7 +37,7 @@ spec:
           lifecycle:
             preStop:
               exec: { command: ["sleep", "15"] }
-      # ---- High availability (page 09) -----------------------------------
+      # ---- High availability (Stage 9) -----------------------------------
       # Spread the 3 copies over the 3 zones, so losing a zone loses only one.
       topologySpreadConstraints:
         - maxSkew: 1

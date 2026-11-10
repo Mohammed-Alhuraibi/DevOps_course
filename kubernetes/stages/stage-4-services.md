@@ -1,6 +1,6 @@
-# 4. Services
+# Stage 4: Services
 
-[Lesson map](README.md) · [← 3. Deployments](03-deployments.md) · **4. Services** · [5. ConfigMaps and Secrets →](05-configmaps-and-secrets.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 3](stage-3-deployments.md) · **Stage 4** · [Stage 5 →](stage-5-configmaps-and-secrets.md)
 
 Pods come and go, and every new one gets a new name and a new IP address. Nobody can keep a phone
 book of them. A Service is one stable name in front of all of them: call `frontend`, and one of the
@@ -9,7 +9,7 @@ ready frontend pods answers.
 **By the end:** you call the frontend by name from inside the cluster and prove that the calls are
 spread over all three pods.
 
-![Services: the Ingress for /api and any pod calling http://backend:3000 reach the Service backend, which selects the pods labelled app=backend and spreads the calls over them; a replaced pod gets a new IP but the Service name stays, like a company phone number that any free agent answers; inside the cluster DNS turns the name backend into the Service's fixed IP](images/slides/k8s-05-services.svg)
+![Services: the Ingress for /api and any pod calling http://backend:3000 reach the Service backend, which selects the pods labelled app=backend and spreads the calls over them; a replaced pod gets a new IP but the Service name stays, like a company phone number that any free agent answers; inside the cluster DNS turns the name backend into the Service's fixed IP](../images/slides/k8s-05-services.svg)
 
 ## 1. Create the Service
 
@@ -78,7 +78,7 @@ laptop$ kubectl exec toolbox -- curl -s http://frontend:8080/healthz
 You should see: `ok`.
 
 > [!WARNING]
-> On a brand-new cluster the DNS pods may still be starting (page 1), and this prints nothing at
+> On a brand-new cluster the DNS pods may still be starting (Stage 1), and this prints nothing at
 > all. Wait a minute and run it again. It happened in our run too.
 
 ## 5. Prove the load balancing
@@ -115,20 +115,20 @@ requests it evens out.
 - Inside the cluster you call `http://frontend:8080`; you never type a pod IP.
 - The `toolbox` pod stays running for later pages.
 
-Next: the backend needs settings and passwords. [5. ConfigMaps and Secrets](05-configmaps-and-secrets.md).
+Next: the backend needs settings and passwords. [Stage 5: ConfigMaps and Secrets](stage-5-configmaps-and-secrets.md).
 
 <details>
 <summary>Going deeper</summary>
 
 - **Service types.** `ClusterIP` (the default: inside the cluster only), `NodePort` (a port on every
   node) and `LoadBalancer` (one cloud load balancer per Service). We use `ClusterIP` plus one
-  Ingress for the whole site (page 7).
+  Ingress for the whole site (Stage 7).
 - **The full name** is `frontend.bugsquash.svc.cluster.local`. Inside the same namespace the short
   name `frontend` is enough.
 - **`34.118.226.213` looks public**, but it is GKE's internal range for Services; the internet can't
   reach it.
 - **The `cloud.google.com/neg` annotation** in the file is GKE-only: it lets Google's load balancer
-  (page 7) send requests straight to the pod IPs.
+  (Stage 7) send requests straight to the pod IPs.
 
 </details>
 

@@ -1,6 +1,6 @@
-# 8. Rolling updates
+# Stage 8: Rolling updates
 
-[Lesson map](README.md) · [← 7. Ingress](07-ingress.md) · **8. Rolling updates** · [9. High availability →](09-high-availability.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 7](stage-7-ingress.md) · **Stage 8** · [Stage 9 →](stage-9-high-availability.md)
 
 On the VM a new version meant `docker compose up -d` and a few seconds of downtime. Kubernetes
 swaps pods one at a time instead: a new pod must be ready before an old one stops. You update the
@@ -9,7 +9,7 @@ frontend while a loop keeps calling the site, and watch the version change in th
 **By the end:** you have rolled the frontend from v1 to v2 and back without a failed request, and
 you know why the files say `sleep 15`.
 
-![Rolling updates in four steps: three v1 frontend pods (sha-0902b98); a v2 pod (sha-dcb0790) becomes ready, then a v1 pod stops; the same again; finally three v2 pods; traffic never stops because the Service only sends visitors to ready pods, and the game's footer shows which commit is live; kubectl set image deployment/frontend starts the update and kubectl rollout undo deployment/frontend brings v1 back](images/slides/k8s-09-rolling-updates.svg)
+![Rolling updates in four steps: three v1 frontend pods (sha-0902b98); a v2 pod (sha-dcb0790) becomes ready, then a v1 pod stops; the same again; finally three v2 pods; traffic never stops because the Service only sends visitors to ready pods, and the game's footer shows which commit is live; kubectl set image deployment/frontend starts the update and kubectl rollout undo deployment/frontend brings v1 back](../images/slides/k8s-09-rolling-updates.svg)
 
 ## 1. Note the version
 
@@ -103,14 +103,14 @@ Reload the game: **Web 0902b98** again.
 
 ## 6. Make the file the truth again
 
-Why: after `set image` and `undo`, apply the file, so that the cluster and Git agree again (page 3).
+Why: after `set image` and `undo`, apply the file, so that the cluster and Git agree again (Stage 3).
 
 ```console
 laptop$ kubectl apply -f manifests/02-frontend-deployment.yaml
 ```
 
 You should see: `deployment.apps/frontend configured`. Stop the loop in the second window with
-**Ctrl+C**, but keep the window open: page 9 uses it.
+**Ctrl+C**, but keep the window open: Stage 9 uses it.
 
 ## Why the files say `sleep 15`
 
@@ -141,7 +141,7 @@ and a rollout takes about a minute.
 - New pods are ready before old ones stop, and the 15-second pause lets the load balancer catch up.
 - The file and the cluster agree again: `sha-0902b98`.
 
-Next: what if a whole machine dies? [9. High availability](09-high-availability.md).
+Next: what if a whole machine dies? [Stage 9: High availability](stage-9-high-availability.md).
 
 <details>
 <summary>Going deeper</summary>
@@ -149,7 +149,7 @@ Next: what if a whole machine dies? [9. High availability](09-high-availability.
 - **How many at a time?** The default strategy allows 25% extra pods and 25% missing ones. With 3
   replicas that rounds to one extra pod and none missing: never fewer than 3 ready.
 - **In real life** nobody types `set image`: CI writes the new tag into the file and applies it, or
-  a GitOps tool does (page 10).
+  a GitOps tool does (Stage 10).
 - `kubectl rollout undo deployment/frontend --to-revision=1` goes back to a chosen revision.
 
 </details>

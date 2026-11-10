@@ -1,9 +1,9 @@
-# 10. HTTPS and wrap-up
+# Stage 10: HTTPS and wrap-up
 
-[Lesson map](README.md) · [← 9. High availability](09-high-availability.md) · **10. HTTPS and wrap-up** · [Cheat sheet](cheatsheet.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · [← Stage 9](stage-9-high-availability.md) · **Stage 10**
 
 The game runs in three zones, survives a power cut and updates without downtime. One thing from
-Stage 3 is missing: the padlock. On GKE there is no certbot; Google issues and renews the
+Docker Stage 3 is still missing: the padlock. On GKE there is no certbot; Google issues and renews the
 certificate itself. Then you delete everything, because a cluster costs money every hour it runs.
 
 **By the end:** `https://k8s.gulfheight.com` shows a padlock, HTTP redirects there, the login cookie
@@ -18,7 +18,7 @@ is *Secure*, you can map Compose to Kubernetes, and nothing is left running.
 
 Why: Google issues a certificate only for a name that points at your load balancer. A
 `ManagedCertificate` names the domain, and one annotation on the Ingress attaches it. Done on
-[page 7, step 7](07-ingress.md#7-optional-start-https-now)? Jump to step 2.
+[Stage 7, step 7](stage-7-ingress.md#7-optional-start-https-now)? Jump to step 2.
 
 In Cloudflare, *DNS → Records → Add record*: type `A`, name `k8s`, IPv4 address = your IP,
 **Proxy status: DNS only** (grey cloud). Then:
@@ -63,7 +63,7 @@ Open `https://k8s.gulfheight.com`: padlock.
 
 ## 3. Redirect HTTP to HTTPS
 
-Why: like the 301 of Stage 3, no visitor should stay on plain HTTP.
+Why: like the 301 of Docker Stage 3, no visitor should stay on plain HTTP.
 
 ```console
 laptop$ kubectl apply -f manifests/09-https-redirect.yaml
@@ -106,7 +106,7 @@ has *Secure* ticked. `patch` was a shortcut: the file still says `"false"`, and 
 
 ## From Compose to Kubernetes
 
-![From Compose to Kubernetes: a service in docker-compose.prod.yml becomes a Deployment plus a Service, the nginx proxy and its ports a Service plus an Ingress, the pgdata volume a PersistentVolumeClaim, .env.prod a ConfigMap plus a Secret, healthcheck readiness and liveness probes, restart: unless-stopped a self-healing Deployment, deploy.resources.limits resources requests and limits, and docker compose up -d becomes kubectl apply -f manifests/](images/slides/k8s-11-compose-to-kubernetes.svg)
+![From Compose to Kubernetes: a service in docker-compose.prod.yml becomes a Deployment plus a Service, the nginx proxy and its ports a Service plus an Ingress, the pgdata volume a PersistentVolumeClaim, .env.prod a ConfigMap plus a Secret, healthcheck readiness and liveness probes, restart: unless-stopped a self-healing Deployment, deploy.resources.limits resources requests and limits, and docker compose up -d becomes kubectl apply -f manifests/](../images/slides/k8s-11-compose-to-kubernetes.svg)
 
 Nothing today was really new: every line of `docker-compose.prod.yml` has a Kubernetes name. What
 is new is that the promise holds across three machines. (In our folder, apply the files one by one:
@@ -138,9 +138,9 @@ it created. Delete the cluster first and the load balancer can stay behind, cost
 
 - **Helm** packages these files as one chart with settings: `helm install bugsquash ./chart`.
 - **Autoscaling:** a HorizontalPodAutoscaler adds backend pods when the CPU is busy, removes them later.
-- **Deploys from Git:** CI applies the files (like Stage 4), or GitOps (Argo CD, Flux) keeps the
+- **Deploys from Git:** CI applies the files (like Docker Stage 4), or GitOps (Argo CD, Flux) keeps the
   cluster equal to the repository.
-- **Cloud SQL:** a managed Postgres with a standby in another zone fixes page 9's weak spot.
+- **Cloud SQL:** a managed Postgres with a standby in another zone fixes Stage 9's weak spot.
 
 ## Checkpoint
 
@@ -149,7 +149,7 @@ it created. Delete the cluster first and the load balancer can stay behind, cost
 - In the console, **Clusters**, **VM instances** and **Network services → Load balancing** no longer
   show anything of `bugsquash`.
 
-Back to the [lesson map](README.md). Keep the [cheat sheet](cheatsheet.md).
+Back to the [lesson map](../README.md). Keep the [cheat sheet](../cheatsheet.md).
 
 ## Troubleshooting
 

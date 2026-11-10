@@ -1,6 +1,6 @@
-# 0. Create the cluster
+# Stage 0: Create the cluster
 
-[Lesson map](README.md) · **0. Create the cluster** · [1. The big picture →](01-the-big-picture.md)
+[Kubernetes lesson](../README.md) · [Concepts](../concepts.md) · **Stage 0** · [Stage 1 →](stage-1-explore-the-cluster.md)
 
 In the Docker stages you rented one VM. Today you rent three at once, one in each of three Google
 data centres in Warsaw, and Kubernetes runs them as one cluster. You create it in the Google Cloud
@@ -10,7 +10,7 @@ console, where you can see every part, and drive it from your own laptop with `k
 `kubectl` on your laptop connected to the cluster, the course files cloned and `bugsquash` as your
 default namespace.
 
-![What we'll build: a regional GKE cluster in europe-central2 with one e2-medium node in each of the zones a, b and c, each running a frontend and a backend pod, postgres with its 5Gi disk in one zone, a control plane run by Google in all three zones, and a Google Cloud load balancer with the static IP bugsquash-ip in front](images/slides/k8s-00-what-we-build.svg)
+![What we'll build: a regional GKE cluster in europe-central2 with one e2-medium node in each of the zones a, b and c, each running a frontend and a backend pod, postgres with its 5Gi disk in one zone, a control plane run by Google in all three zones, and a Google Cloud load balancer with the static IP bugsquash-ip in front](../images/slides/k8s-00-what-we-build.svg)
 
 ## 1. Create the cluster in the console
 
@@ -20,7 +20,7 @@ In <https://console.cloud.google.com>, pick your project, then **Kubernetes Engi
 Create** (click **Enable** if the console asks for the Kubernetes Engine API). Choose **Standard**.
 
 > [!WARNING]
-> **Standard, not Autopilot.** Autopilot hides the nodes, so page 9's demo, stopping a node, is impossible.
+> **Standard, not Autopilot.** Autopilot hides the nodes, so Stage 9's demo, stopping a node, is impossible.
 
 | Setting | Value |
 |---------|-------|
@@ -33,17 +33,17 @@ Create** (click **Enable** if the console asks for the Kubernetes Engine API). C
 | Everything else | the default |
 
 Click **Create**. You should see `bugsquash` in the list with a spinner, then a green check, 3
-nodes and version `1.36.x` (about 4 minutes in our test). Read [page 1](01-the-big-picture.md)'s
+nodes and version `1.36.x` (about 4 minutes in our test). Read [Stage 1](stage-1-explore-the-cluster.md)'s
 slides meanwhile.
 
 > [!NOTE]
 > **Region and zones.** A region is a city (`europe-central2` is Warsaw); a zone is one data centre
 > in it, with its own power and network. One node per zone means a power cut takes out only a third
-> of the cluster. Page 9 proves it.
+> of the cluster. Stage 9 proves it.
 
 ## 2. Reserve a static IP in the console
 
-Why: the public door of page 7 needs an address that never changes, so a DNS name can point at it.
+Why: the public door of Stage 7 needs an address that never changes, so a DNS name can point at it.
 Google's web load balancer is global, so the address must be global too.
 
 **VPC network → IP addresses → Reserve external static IP address**: name `bugsquash-ip`, IP
@@ -140,7 +140,7 @@ The second command makes `bugsquash` your default, so no command in this lesson 
 - You have written down the address of `bugsquash-ip`.
 - `kubectl get pods` answers `No resources found in bugsquash namespace.`
 
-Next: what exactly did you just rent? [1. The big picture](01-the-big-picture.md).
+Next: what exactly did you just rent? [Stage 1: The big picture](stage-1-explore-the-cluster.md).
 
 <details>
 <summary>Going deeper: the same thing with commands, or in Cloud Shell</summary>
@@ -157,7 +157,7 @@ Next: what exactly did you just rent? [1. The big picture](01-the-big-picture.md
 
 - **Cloud Shell.** The **`>_`** icon at the top right of the console opens a terminal in the browser
   with `gcloud`, `kubectl` and `git` preinstalled and already logged in: skip step 3 and type the
-  same commands there. Page 2's `localhost:8080` then becomes **Web Preview → Preview on port 8080**.
+  same commands there. Stage 2's `localhost:8080` then becomes **Web Preview → Preview on port 8080**.
 
 </details>
 
@@ -165,6 +165,7 @@ Next: what exactly did you just rent? [1. The big picture](01-the-big-picture.md
 
 | Symptom | Fix |
 |---------|-----|
+| `command not found: gcloud` (or `kubectl`) | The CLI is installed but your shell does not know its folder yet. Open a **new** terminal; if that does not help, add it to your shell's start file, for example `echo 'source ~/google-cloud-sdk/path.zsh.inc' >> ~/.zshrc` (bash: `path.bash.inc` and `~/.bashrc`; use the folder you installed to), then open a new terminal. |
 | The console asks to enable the Kubernetes Engine API | Click **Enable**, wait a minute, then **Create** again. |
 | Creating fails with a quota error for CPUs | The three nodes need 6 vCPUs. Stop other VMs in the project (the course VM uses 2) or ask for more quota (*IAM & Admin → Quotas*). |
 | `gke-gcloud-auth-plugin … was not found or is not executable` | Install the plugin (step 3), open a new terminal, run step 4 again. |
