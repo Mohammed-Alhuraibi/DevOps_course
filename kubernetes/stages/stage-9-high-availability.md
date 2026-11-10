@@ -64,7 +64,7 @@ In the second terminal window (Stage 8; open a new one if you closed it):
 
 ```console
 laptop$ IP=<your IP>
-laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/api/scores/leaderboard; sleep 1; done
+laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " "http://$IP/api/scores/leaderboard"; sleep 1; done
 ```
 
 You should see `200 200 200 …` (the instructor loops on `http://k8s.gulfheight.com`). Keep the game

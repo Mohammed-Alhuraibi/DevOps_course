@@ -93,7 +93,7 @@ with the password from the Secret.
 Why: put one real row into the database, from the toolbox, through the Service `backend`.
 
 ```console
-laptop$ kubectl exec toolbox -- curl -s http://backend:3000/api/health
+laptop$ kubectl exec toolbox -- curl -s "http://backend:3000/api/health"
 laptop$ kubectl exec toolbox -- curl -s -H 'Content-Type: application/json' \
           -d '{"username":"survivor","password":"squash-me-123"}' http://backend:3000/api/auth/signup
 ```

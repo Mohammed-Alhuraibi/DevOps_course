@@ -43,7 +43,7 @@ takes 15 to 60 minutes.
 
 ```console
 laptop$ kubectl get managedcertificate bugsquash-cert
-laptop$ curl -sI https://k8s.gulfheight.com/ | head -1
+laptop$ curl -sI "https://k8s.gulfheight.com/" | head -1
 ```
 
 You should see (expected) `STATUS` go from empty to `Provisioning` to `Active`, and a few minutes
@@ -67,7 +67,7 @@ Why: like the 301 of Docker Stage 3, no visitor should stay on plain HTTP.
 
 ```console
 laptop$ kubectl apply -f manifests/09-https-redirect.yaml
-laptop$ curl -sI http://k8s.gulfheight.com/ | grep -iE '^(HTTP|location)'
+laptop$ curl -sI "http://k8s.gulfheight.com/" | grep -iE '^(HTTP|location)'
 ```
 
 You should see (expected; the redirect needs a few minutes to reach the load balancer):

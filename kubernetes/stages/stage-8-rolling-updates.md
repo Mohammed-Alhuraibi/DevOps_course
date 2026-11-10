@@ -30,7 +30,7 @@ Open a second terminal window and run in it (`<your IP>` is the address of `bugs
 
 ```console
 laptop$ IP=<your IP>
-laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/; sleep 1; done
+laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " "http://$IP/"; sleep 1; done
 ```
 
 You should see a growing line of `200 200 200 …`. Leave it running and go back to the first window.
@@ -158,6 +158,7 @@ Next: what if a whole machine dies? [Stage 9: High availability](stage-9-high-av
 
 | Symptom | Fix |
 |---------|-----|
+| The loop prints `404 000 000 404 …` but a single `curl` gives `200` | Your shell added a `\` before `;` (zsh's *url-quote-magic*), so `curl` got `/;`, `sleep` and `1` as three addresses. Keep the URL in double quotes, exactly as shown: `"http://$IP/"`. |
 | New pods show `ErrImagePull` or `ImagePullBackOff` | Typo in the tag. The old pods keep serving meanwhile: `kubectl rollout undo deployment/frontend`. |
 | The footer still shows the old version | Wait for `successfully rolled out`, then reload with Ctrl+Shift+R. |
 | A few `000` or `502` appear during the rollout | The pods run without the pause: `kubectl apply -f manifests/02-frontend-deployment.yaml`, then try again. |

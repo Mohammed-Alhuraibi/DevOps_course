@@ -81,7 +81,7 @@ bugsquash   <none>   *       136.81.240.49   80      4m49s
 Why: check both rules with `curl` before you open the browser.
 
 ```console
-laptop$ curl -s http://$IP/api/health; echo; curl -s http://$IP/ | grep -o '<title>.*</title>'
+laptop$ curl -s "http://$IP/api/health"; echo; curl -s "http://$IP/" | grep -o '<title>.*</title>'
 ```
 
 You should see the API answer through `/api` and the game page through `/`:

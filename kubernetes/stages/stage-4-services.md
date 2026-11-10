@@ -72,7 +72,7 @@ pod/toolbox condition met
 Why: inside the cluster, DNS turns the name `frontend` into the Service's IP.
 
 ```console
-laptop$ kubectl exec toolbox -- curl -s http://frontend:8080/healthz
+laptop$ kubectl exec toolbox -- curl -s "http://frontend:8080/healthz"
 ```
 
 You should see: `ok`.
@@ -86,7 +86,7 @@ You should see: `ok`.
 Why: one name, three pods. Are the calls really spread?
 
 ```console
-laptop$ kubectl exec toolbox -- sh -c 'for i in $(seq 1 9); do curl -s -o /dev/null http://frontend:8080/; done'
+laptop$ kubectl exec toolbox -- sh -c 'for i in $(seq 1 9); do curl -s -o /dev/null "http://frontend:8080/"; done'
 laptop$ kubectl logs -l app=frontend --prefix --since=30s | grep 'GET / ' | awk '{print $1}' | sort | uniq -c
 ```
 

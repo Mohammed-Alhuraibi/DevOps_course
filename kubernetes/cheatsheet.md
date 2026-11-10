@@ -57,7 +57,7 @@ kubectl logs -l app=backend --prefix --since=10m
 kubectl exec -it <POD_NAME> -- sh
 
 # Call a Service from inside the cluster (the toolbox pod of Stage 4)
-kubectl exec toolbox -- curl -s http://backend:3000/api/health
+kubectl exec toolbox -- curl -s "http://backend:3000/api/health"
 
 # A private tunnel to a pod: then open http://localhost:8080 (Ctrl+C to stop)
 kubectl port-forward pod/<POD_NAME> 8080:8080
