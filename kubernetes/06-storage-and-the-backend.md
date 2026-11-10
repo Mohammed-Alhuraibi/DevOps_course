@@ -17,8 +17,8 @@ Why: one file, three objects: a disk claim, one Postgres pod and the Service `po
 backend calls (`PGHOST`, page 5).
 
 ```console
-cloudshell$ kubectl apply -f manifests/05-postgres.yaml
-cloudshell$ kubectl get pvc
+laptop$ kubectl apply -f manifests/05-postgres.yaml
+laptop$ kubectl get pvc
 ```
 
 You should see the three objects, and the claim still `Pending`:
@@ -38,9 +38,9 @@ postgres-data   Pending                                      standard-rwo   <uns
 Why: the claim ("I need 5 GiB") gets bound to a real Google Persistent Disk.
 
 ```console
-cloudshell$ kubectl rollout status deployment/postgres --timeout=180s
-cloudshell$ kubectl get pvc,pv
-cloudshell$ kubectl get pods -l app=postgres -o wide
+laptop$ kubectl rollout status deployment/postgres --timeout=180s
+laptop$ kubectl get pvc,pv
+laptop$ kubectl get pods -l app=postgres -o wide
 ```
 
 You should see (trimmed) the claim `Bound` to a 5Gi volume, and the node that runs the database:
@@ -59,15 +59,18 @@ postgres-5b5cd498df-jb9nd   1/1     Running   0          24s   10.76.0.11   gke-
 
 Remember that node: on page 9 it matters where the database lives.
 
+**Look in the console:** **Compute Engine → Storage → Disks** shows the volume as an ordinary 5 GB
+disk named `pvc-4306735b-…`, in one zone only: the zone of the database's node.
+
 ## 3. Start the backend
 
 Why: three copies of the API, set up by the ConfigMap and the Secret. They keep no data of their
 own, so Kubernetes may stop and move them freely.
 
 ```console
-cloudshell$ kubectl apply -f manifests/06-backend.yaml
-cloudshell$ kubectl rollout status deployment/backend --timeout=180s
-cloudshell$ kubectl logs deployment/backend --tail=4
+laptop$ kubectl apply -f manifests/06-backend.yaml
+laptop$ kubectl rollout status deployment/backend --timeout=180s
+laptop$ kubectl logs deployment/backend --tail=4
 ```
 
 You should see (trimmed; `logs deployment/backend` picks one of its pods):
@@ -90,9 +93,9 @@ with the password from the Secret.
 Why: put one real row into the database, from the toolbox, through the Service `backend`.
 
 ```console
-cloudshell$ kubectl exec toolbox -- curl -s http://backend:3000/api/health
-cloudshell$ kubectl exec toolbox -- curl -s -H 'Content-Type: application/json' \
-              -d '{"username":"survivor","password":"squash-me-123"}' http://backend:3000/api/auth/signup
+laptop$ kubectl exec toolbox -- curl -s http://backend:3000/api/health
+laptop$ kubectl exec toolbox -- curl -s -H 'Content-Type: application/json' \
+          -d '{"username":"survivor","password":"squash-me-123"}' http://backend:3000/api/auth/signup
 ```
 
 You should see a healthy API (`ok` only when the database answers too) and a new player, id 1:
@@ -107,10 +110,10 @@ You should see a healthy API (`ok` only when the database answers too) and a new
 Why: the moment of truth. If the data lived inside the pod, `survivor` would die with it.
 
 ```console
-cloudshell$ kubectl delete pod -l app=postgres
-cloudshell$ kubectl rollout status deployment/postgres --timeout=180s; kubectl get pods -l app=postgres
-cloudshell$ kubectl exec toolbox -- curl -s -H 'Content-Type: application/json' \
-              -d '{"username":"survivor","password":"squash-me-123"}' http://backend:3000/api/auth/login
+laptop$ kubectl delete pod -l app=postgres
+laptop$ kubectl rollout status deployment/postgres --timeout=180s; kubectl get pods -l app=postgres
+laptop$ kubectl exec toolbox -- curl -s -H 'Content-Type: application/json' \
+          -d '{"username":"survivor","password":"squash-me-123"}' http://backend:3000/api/auth/login
 ```
 
 You should see a new pod (new name) running a few seconds later, and the same player, still id 1:
@@ -144,8 +147,6 @@ Next: everything works, but only inside the cluster. Time for a public door: [7.
 <details>
 <summary>Going deeper</summary>
 
-- `gcloud compute disks list` shows the volume as an ordinary Compute Engine disk called `pvc-…`,
-  in a single zone.
 - `RECLAIM POLICY: Delete`: delete the claim and Google deletes the disk, data included. The cleanup
   on page 10 relies on that.
 

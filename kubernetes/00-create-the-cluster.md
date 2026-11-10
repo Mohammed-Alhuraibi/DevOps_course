@@ -3,98 +3,88 @@
 [Lesson map](README.md) · **0. Create the cluster** · [1. The big picture →](01-the-big-picture.md)
 
 In the Docker stages you rented one VM. Today you rent three at once, one in each of three Google
-data centres in Warsaw, and Kubernetes runs them as one cluster. You install nothing: every command
-runs in Cloud Shell, a Linux terminal inside your browser.
+data centres in Warsaw, and Kubernetes runs them as one cluster. You create it in the Google Cloud
+console, where you can see every part, and drive it from your own laptop with `kubectl`.
 
-**By the end:** a 3-node cluster called `bugsquash`, a reserved public IP, `kubectl` connected to the
-cluster, the course files in Cloud Shell and `bugsquash` as your default namespace.
+**By the end:** a Standard regional cluster called `bugsquash` with 3 nodes, a reserved static IP,
+`kubectl` on your laptop connected to the cluster, the course files cloned and `bugsquash` as your
+default namespace.
 
 ![What we'll build: a regional GKE cluster in europe-central2 with one e2-medium node in each of the zones a, b and c, each running a frontend and a backend pod, postgres with its 5Gi disk in one zone, a control plane run by Google in all three zones, and a Google Cloud load balancer with the static IP bugsquash-ip in front](images/slides/k8s-00-what-we-build.svg)
 
-## 1. Open Cloud Shell
+## 1. Create the cluster in the console
 
-Why: it already has `gcloud`, `kubectl` and `git`, and it is logged in as you.
+Why: the console shows every setting on one page, and you change only a few of them.
 
-Open <https://console.cloud.google.com>, choose your project in the project picker at the top, and
-click the **`>_`** icon (*Activate Cloud Shell*) at the top right. A terminal opens at the bottom of
-the page. If a window asks you to *Authorize Cloud Shell*, click **Authorize**.
+In <https://console.cloud.google.com>, pick your project, then **Kubernetes Engine → Clusters →
+Create** (click **Enable** if the console asks for the Kubernetes Engine API). Choose **Standard**.
 
-You should see a prompt like `you@cloudshell:~ (your-project-id)$`. These pages shorten it to
-`cloudshell$`: type what comes after it, never the prompt itself.
+> [!WARNING]
+> **Standard, not Autopilot.** Autopilot hides the nodes, so page 9's demo, stopping a node, is impossible.
 
-## 2. Choose the project and the region
+| Setting | Value |
+|---------|-------|
+| Name | `bugsquash` |
+| Location type | **Regional**, region `europe-central2` (zones a, b and c by default) |
+| Release channel | Regular (the default) |
+| Node pool `default-pool`: number of nodes | **1** (it counts per zone, so 3 nodes in all) |
+| Nodes: machine type | `e2-medium` (2 shared vCPUs and 4 GB, like the course VM) |
+| Nodes: boot disk size | **30** GB |
+| Everything else | the default |
 
-Why: every later `gcloud` command uses these defaults, and GKE's API must be switched on once per
-project. Replace `<PROJECT_ID>` with your project's ID (not its name) from the project picker.
-
-```console
-cloudshell$ gcloud config set project <PROJECT_ID>
-cloudshell$ gcloud config set compute/region europe-central2
-cloudshell$ gcloud services enable container.googleapis.com
-```
-
-You should see `Updated property [core/project].`, `Updated property [compute/region].` and, after
-up to a minute, `Operation "operations/acf.p2-…" finished successfully.`
-
-## 3. Create the cluster
-
-Why: one command rents three VMs (the *nodes*), installs Kubernetes and adds a control plane run by Google.
-
-```console
-cloudshell$ gcloud container clusters create bugsquash --region europe-central2 \
-              --num-nodes 1 --machine-type e2-medium --disk-size 30 --release-channel regular
-```
-
-| Flag | Meaning |
-|------|---------|
-| `--region europe-central2` | a *regional* cluster in Warsaw, spread over zones a, b and c |
-| `--num-nodes 1` | one node **per zone**, so three nodes in total |
-| `--machine-type e2-medium` `--disk-size 30` | 2 shared vCPUs, 4 GB and a 30 GB disk per node, like the course VM |
-| `--release-channel regular` | Google upgrades Kubernetes for you, on a tested schedule |
-
-You should see, after about 4 minutes (read the slides of [page 1](01-the-big-picture.md) meanwhile):
-
-```text
-Creating cluster bugsquash in europe-central2.......................done.
-Created [https://container.googleapis.com/v1/projects/<PROJECT_ID>/zones/europe-central2/clusters/bugsquash].
-kubeconfig entry generated for bugsquash.
-NAME       LOCATION         MASTER_VERSION      MASTER_IP      MACHINE_TYPE  NODE_VERSION        NUM_NODES  STATUS
-bugsquash  europe-central2  1.36.4-gke.2377000  34.118.41.149  e2-medium     1.36.4-gke.2377000  3          RUNNING
-```
+Click **Create**. You should see `bugsquash` in the list with a spinner, then a green check, 3
+nodes and version `1.36.x` (about 4 minutes in our test). Read [page 1](01-the-big-picture.md)'s
+slides meanwhile.
 
 > [!NOTE]
 > **Region and zones.** A region is a city (`europe-central2` is Warsaw); a zone is one data centre
 > in it, with its own power and network. One node per zone means a power cut takes out only a third
 > of the cluster. Page 9 proves it.
 
-## 4. Reserve a static IP
+## 2. Reserve a static IP in the console
 
 Why: the public door of page 7 needs an address that never changes, so a DNS name can point at it.
-`--global`, because Google's web load balancer is a global one.
+Google's web load balancer is global, so the address must be global too.
+
+**VPC network → IP addresses → Reserve external static IP address**: name `bugsquash-ip`, IP
+version **IPv4**, type **Global**, then **Reserve**.
+
+You should see `bugsquash-ip` in the list with its address (ours: `136.81.240.49`). Write it down:
+every new reservation gets a different address.
+
+## 3. Install the tools on your laptop (once)
+
+Why: `kubectl` is Kubernetes' remote control, and the Google Cloud CLI logs it in with your account.
+
+Install the Google Cloud CLI (<https://cloud.google.com/sdk/docs/install>). On Windows, use WSL
+(Ubuntu) and its Linux instructions, so that every command in this lesson works as written. Then:
 
 ```console
-cloudshell$ gcloud compute addresses create bugsquash-ip --global
-cloudshell$ gcloud compute addresses describe bugsquash-ip --global --format='value(address)'
+laptop$ gcloud components install kubectl gke-gcloud-auth-plugin
+laptop$ gcloud auth login
+laptop$ gcloud config set project <PROJECT_ID>
 ```
 
-You should see the new address (ours; yours will differ). Write it down:
+`<PROJECT_ID>` is the project's ID (not its name), shown in the console's project picker. Installed
+the CLI with apt, dnf or Homebrew, and `gcloud components` refuses? Install `kubectl` and
+`google-cloud-cli-gke-gcloud-auth-plugin` with that package manager instead.
 
-```text
-Created [https://www.googleapis.com/compute/v1/projects/<PROJECT_ID>/global/addresses/bugsquash-ip].
-136.81.240.49
-```
+You should see the components installed, a browser tab where you sign in to Google, then
+`You are now logged in as [you@example.com].` and `Updated property [core/project].`
 
-## 5. Connect kubectl to the cluster
+## 4. Connect kubectl to the cluster
 
-Why: `kubectl` is Kubernetes' remote control, and this stores the cluster's address and your login
-in `~/.kube/config` (step 3 already did it; on any other machine you need this command).
+Why: this writes the cluster's address and your login into `~/.kube/config`.
+
+In the console, open **Kubernetes Engine → Clusters → bugsquash** and click **Connect**: it shows
+the exact command. Copy it, then check the nodes:
 
 ```console
-cloudshell$ gcloud container clusters get-credentials bugsquash --region europe-central2
-cloudshell$ kubectl get nodes
+laptop$ gcloud container clusters get-credentials bugsquash --region europe-central2 --project <PROJECT_ID>
+laptop$ kubectl get nodes
 ```
 
-You should see three nodes, all `Ready`:
+You should see three nodes, all `Ready` (names differ for you):
 
 ```text
 Fetching cluster endpoint and auth data.
@@ -105,13 +95,15 @@ gke-bugsquash-default-pool-34ca6972-2bt9   Ready    <none>   26s   v1.36.4-gke.2
 gke-bugsquash-default-pool-7204075e-xh1n   Ready    <none>   25s   v1.36.4-gke.2377000
 ```
 
-## 6. Get the course files
+**Look in the console:** the cluster's **Nodes** tab lists the same three nodes, with their zones.
+
+## 5. Get the course files
 
 Why: the YAML files (*manifests*) that describe Bug Squash to Kubernetes are in the course repository.
 
 ```console
-cloudshell$ git clone https://github.com/Mohammed-Alhuraibi/DevOps_course.git && cd DevOps_course/kubernetes
-cloudshell$ ls manifests
+laptop$ git clone https://github.com/Mohammed-Alhuraibi/DevOps_course.git && cd DevOps_course/kubernetes
+laptop$ ls manifests
 ```
 
 You should see ten files, from `00-namespace.yaml` to `09-https-redirect.yaml`. Every later command
@@ -119,17 +111,17 @@ runs from this `kubernetes` folder.
 
 > [!TIP]
 > If `git clone` asks for a username, the repository is private: ask the instructor for access, or
-> download the `kubernetes` folder and upload it with Cloud Shell's **⋮ (More) → Upload**.
+> download it as a ZIP from GitHub (**Code → Download ZIP**) and unpack it.
 
-## 7. Create the namespace
+## 6. Create the namespace
 
 Why: a namespace is a folder inside the cluster. All of Bug Squash goes into `bugsquash`, so one
 command deletes it all at the end.
 
 ```console
-cloudshell$ kubectl apply -f manifests/00-namespace.yaml
-cloudshell$ kubectl config set-context --current --namespace=bugsquash
-cloudshell$ kubectl get pods
+laptop$ kubectl apply -f manifests/00-namespace.yaml
+laptop$ kubectl config set-context --current --namespace=bugsquash
+laptop$ kubectl get pods
 ```
 
 You should see:
@@ -144,21 +136,28 @@ The second command makes `bugsquash` your default, so no command in this lesson 
 
 ## Checkpoint
 
-- `kubectl get nodes` lists three `Ready` nodes.
-- You have written down the IP of `bugsquash-ip`.
+- The console shows `bugsquash` with a green check, and `kubectl get nodes` lists three `Ready` nodes.
+- You have written down the address of `bugsquash-ip`.
 - `kubectl get pods` answers `No resources found in bugsquash namespace.`
 
 Next: what exactly did you just rent? [1. The big picture](01-the-big-picture.md).
 
 <details>
-<summary>Going deeper</summary>
+<summary>Going deeper: the same thing with commands, or in Cloud Shell</summary>
 
-- **From your laptop instead of Cloud Shell.** Install the gcloud CLI
-  (<https://cloud.google.com/sdk/docs/install>), run `gcloud init`, then
-  `gcloud components install kubectl gke-gcloud-auth-plugin` and step 5's `get-credentials`. If you
-  installed gcloud with `apt`, install `kubectl` and `google-cloud-cli-gke-gcloud-auth-plugin` with
-  `apt` instead. Read `laptop$` wherever these pages say `cloudshell$`; page 2's Web Preview becomes
-  `http://localhost:8080`.
+- **Steps 1 and 2 as commands.** These created the cluster of our tested run (about 4 minutes):
+
+  ```console
+  laptop$ gcloud services enable container.googleapis.com
+  laptop$ gcloud container clusters create bugsquash --region europe-central2 \
+            --num-nodes 1 --machine-type e2-medium --disk-size 30 --release-channel regular
+  laptop$ gcloud compute addresses create bugsquash-ip --global
+  laptop$ gcloud compute addresses describe bugsquash-ip --global --format='value(address)'
+  ```
+
+- **Cloud Shell.** The **`>_`** icon at the top right of the console opens a terminal in the browser
+  with `gcloud`, `kubectl` and `git` preinstalled and already logged in: skip step 3 and type the
+  same commands there. Page 2's `localhost:8080` then becomes **Web Preview → Preview on port 8080**.
 
 </details>
 
@@ -166,7 +165,8 @@ Next: what exactly did you just rent? [1. The big picture](01-the-big-picture.md
 
 | Symptom | Fix |
 |---------|-----|
-| `Kubernetes Engine API has not been used in project … or it is disabled` | Run step 2's `gcloud services enable container.googleapis.com`, wait a minute, try again. |
-| `Quota 'CPUS' exceeded` | The three nodes need 6 vCPUs. Stop other VMs in the project (the course VM uses 2) or ask for more quota (*IAM & Admin → Quotas*). |
-| `The connection to the server localhost:8080 was refused` | kubectl doesn't know the cluster yet: run step 5. |
-| Cloud Shell reconnected, or `destination path 'DevOps_course' already exists` | Your files are still there: `cd ~/DevOps_course/kubernetes` (and `git pull` for the latest). kubectl still knows the cluster and the namespace. |
+| The console asks to enable the Kubernetes Engine API | Click **Enable**, wait a minute, then **Create** again. |
+| Creating fails with a quota error for CPUs | The three nodes need 6 vCPUs. Stop other VMs in the project (the course VM uses 2) or ask for more quota (*IAM & Admin → Quotas*). |
+| `gke-gcloud-auth-plugin … was not found or is not executable` | Install the plugin (step 3), open a new terminal, run step 4 again. |
+| `The connection to the server localhost:8080 was refused` | kubectl doesn't know the cluster yet: run step 4. |
+| `get-credentials`: `403` or `Not found` | Wrong project or account: `gcloud auth login` again and check `<PROJECT_ID>` in the command. |

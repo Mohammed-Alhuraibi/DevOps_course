@@ -16,8 +16,8 @@ seconds), brought the node back and spread the pods out again.
 Why: high availability starts before the failure, with one frontend and one backend in every zone.
 
 ```console
-cloudshell$ kubectl get nodes -L topology.kubernetes.io/zone
-cloudshell$ kubectl get pods -o wide -l 'app in (frontend,backend,postgres)' | awk '{print $1, $3, $7}' | column -t
+laptop$ kubectl get nodes -L topology.kubernetes.io/zone
+laptop$ kubectl get pods -o wide -l 'app in (frontend,backend,postgres)' | awk '{print $1, $3, $7}' | column -t
 ```
 
 The `awk` keeps three columns: name, status and node. You should see (ours, just before the demo;
@@ -48,7 +48,7 @@ Why: the database is one pod on a disk that lives in one zone (page 6). Stop *it
 has to wait; stop any other and nobody should notice.
 
 ```console
-cloudshell$ kubectl get pod -l app=postgres -o wide
+laptop$ kubectl get pod -l app=postgres -o wide
 ```
 
 You should see one pod and its `NODE`. Ours, `postgres-5b5cd498df-tlpds`, ran on
@@ -60,11 +60,11 @@ steps call them `<NODE>` and `<ZONE>`.
 
 Why: this time call the API, which needs the whole chain: load balancer, backend and database.
 
-In the second Cloud Shell tab (page 8; **+** opens a new one):
+In the second terminal window (page 8; open a new one if you closed it):
 
 ```console
-cloudshell$ IP=$(gcloud compute addresses describe bugsquash-ip --global --format='value(address)')
-cloudshell$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/api/scores/leaderboard; sleep 1; done
+laptop$ IP=<your IP>
+laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/api/scores/leaderboard; sleep 1; done
 ```
 
 You should see `200 200 200 …` (the instructor loops on `http://k8s.gulfheight.com`). Keep the game
@@ -74,16 +74,13 @@ open in your browser, too.
 
 Why: a node is a VM, and stopping it is the closest thing to a power cut in one data centre.
 
-```console
-cloudshell$ gcloud compute instances stop <NODE> --zone <ZONE>
-```
+In the console, **Compute Engine → VM instances**: tick the VM named `<NODE>` (all three start with
+`gke-bugsquash-default-pool-`; check that the **Zone** column says `<ZONE>`), click **Stop** and
+confirm. Ours was `gke-bugsquash-default-pool-34ca6972-2bt9` in `europe-central2-a`.
 
-It takes about 2 minutes (1m47s for us): watch the loop in the second tab meanwhile. You should see
-(ours):
-
-```text
-Updated [https://compute.googleapis.com/compute/v1/projects/<PROJECT_ID>/zones/europe-central2-a/instances/gke-bugsquash-default-pool-34ca6972-2bt9].
-```
+You should see its status change to *Stopping*, then *Stopped* after about 2 minutes (1m47s for us).
+Watch the loop in the second window meanwhile. The same with a command:
+`gcloud compute instances stop <NODE> --zone <ZONE>`.
 
 ## 5. Watch Kubernetes react
 
@@ -91,9 +88,12 @@ Why: Kubernetes marks the silent node `NotReady` and, 30 seconds later (the `tol
 of the files), re-creates its pods on the nodes that are left.
 
 ```console
-cloudshell$ kubectl get nodes -L topology.kubernetes.io/zone
-cloudshell$ kubectl get pods -o wide -l 'app in (frontend,backend,postgres)' | awk '{print $1, $3, $7}' | column -t
+laptop$ kubectl get nodes -L topology.kubernetes.io/zone
+laptop$ kubectl get pods -o wide -l 'app in (frontend,backend,postgres)' | awk '{print $1, $3, $7}' | column -t
 ```
+
+**Look in the console:** the cluster's **Nodes** tab shows the node *Not ready*, and **Workloads**
+shows `frontend` and `backend` lose a pod and get it back.
 
 Run the second command a few times. You should see the node `NotReady`, its two pods `Terminating`,
 their replacements already `Running` elsewhere (trimmed), and a little later only the replacements:
@@ -116,16 +116,18 @@ checks noticed. After that, 100% were answered by the other two zones; the game 
 Why: a returning node comes back empty. Kubernetes places pods only when it creates them; it never
 moves running pods back by itself.
 
+In **Compute Engine → VM instances**, tick the same VM and click **Start / Resume** (or
+`gcloud compute instances start <NODE> --zone <ZONE>`). Then, in your terminal, repeat `get nodes`
+until all three are `Ready` (about a minute after the start), and only then restart:
+
 ```console
-cloudshell$ gcloud compute instances start <NODE> --zone <ZONE>
-cloudshell$ kubectl get nodes -L topology.kubernetes.io/zone
-cloudshell$ kubectl rollout restart deployment/frontend deployment/backend
+laptop$ kubectl get nodes -L topology.kubernetes.io/zone
+laptop$ kubectl rollout restart deployment/frontend deployment/backend
 ```
 
-Repeat `get nodes` until all three are `Ready`, about a minute after the start. You should see (trimmed):
+You should see (trimmed):
 
 ```text
-Instance external IP is 34.116.181.55
 gke-bugsquash-default-pool-34ca6972-2bt9   Ready    <none>   3m8s   v1.36.4-gke.2377000   europe-central2-a
 deployment.apps/frontend restarted
 deployment.apps/backend restarted
@@ -165,4 +167,4 @@ Next: the padlock, then cleanup. [10. HTTPS and wrap-up](10-https-and-wrap-up.md
 | Pods on the stopped node still show `Running` | Kubernetes needs about a minute to notice the node, then waits 30 seconds: run the command again. |
 | Replacement pods stay `Pending` | The other nodes are full: `kubectl describe pod <POD_NAME>`. They start once the node is back. |
 | `kubectl exec toolbox` fails after the demo | The toolbox lived on that node, and a lone pod is never replaced (page 2): `kubectl delete pod toolbox`, then [page 4, step 3](04-services.md#3-start-a-toolbox-pod). |
-| `gcloud … stop`: `The resource … was not found` | Wrong zone for that node: use the zone from step 1. |
+| Not sure which VM is which | The VM names are the node names of `kubectl get nodes`; the **Zone** column matches step 1. |

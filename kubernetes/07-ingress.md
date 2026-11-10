@@ -16,14 +16,16 @@ your own public IP.
 
 Why: the Ingress asks for the address by its name, `bugsquash-ip`; without it there is no load balancer.
 
+**Look in the console:** **VPC network → IP addresses** must list `bugsquash-ip`, type *Global*.
+Missing? Reserve it ([page 0, step 2](00-create-the-cluster.md#2-reserve-a-static-ip-in-the-console)).
+Then keep its address in a variable of your terminal, for the commands below:
+
 ```console
-cloudshell$ IP=$(gcloud compute addresses describe bugsquash-ip --global --format='value(address)')
-cloudshell$ echo $IP
+laptop$ IP=<your IP>
+laptop$ echo $IP
 ```
 
-You should see your IP (ours: `136.81.240.49`). An error saying `bugsquash-ip` `was not found`?
-Reserve it ([page 0, step 4](00-create-the-cluster.md#4-reserve-a-static-ip)), then run both lines
-again. `IP=$(…)` keeps the address in a variable of this terminal; in a new tab, run the first line again.
+You should see your address (ours: `136.81.240.49`). In a new terminal window, set `IP` again.
 
 ## 2. Open the door
 
@@ -31,7 +33,7 @@ Why: two rules, like the nginx proxy had: `/api…` goes to the backend Service,
 the frontend Service.
 
 ```console
-cloudshell$ kubectl apply -f manifests/07-ingress.yaml
+laptop$ kubectl apply -f manifests/07-ingress.yaml
 ```
 
 You should see: `ingress.networking.k8s.io/bugsquash created`.
@@ -42,28 +44,32 @@ Why: Google is now building a load balancer: a front door on your IP, the two pa
 checks copied from your readiness probes, and direct links to your pods' IPs. That takes minutes.
 
 ```console
-cloudshell$ watch kubectl get ingress bugsquash
+laptop$ kubectl get ingress bugsquash --watch
 ```
 
-`watch` repeats the command every 2 seconds. You should see `ADDRESS` filled in after about 5
-minutes; then press **Ctrl+C** to leave `watch`:
+`--watch` prints a new line whenever the Ingress changes. You should see `ADDRESS` filled in after
+about 5 minutes (trimmed); then press **Ctrl+C**:
 
 ```text
 NAME        CLASS    HOSTS   ADDRESS         PORTS   AGE
 bugsquash   <none>   *       136.81.240.49   80      4m49s
 ```
 
+**Look in the console:** **Kubernetes Engine → Gateways, Services & Ingress → Ingress** shows
+`bugsquash` with a spinner, then a green check and your IP; in **VPC network → IP addresses**,
+`bugsquash-ip` is now *in use by* a forwarding rule.
+
 > [!TIP]
 > **Get a coffee.** In our run the address appeared after about 5 minutes and the site answered
 > after about 7. Until then Google answers with an error page (`404` or `502`): normal, not your
 > mistake. Instructors: a good moment for [step 7](#7-optional-start-https-now).
 
-## 4. Test it from Cloud Shell
+## 4. Test it from your terminal
 
 Why: check both rules with `curl` before you open the browser.
 
 ```console
-cloudshell$ curl -s http://$IP/api/health; echo; curl -s http://$IP/ | grep -o '<title>.*</title>'
+laptop$ curl -s http://$IP/api/health; echo; curl -s http://$IP/ | grep -o '<title>.*</title>'
 ```
 
 You should see the API answer through `/api` and the game page through `/`:
@@ -87,7 +93,7 @@ Why: the backend must see every visitor's real IP, because its login rate limit 
 per IP.
 
 ```console
-cloudshell$ kubectl logs -l app=backend --since=10m | grep /api/auth
+laptop$ kubectl logs -l app=backend --since=10m | grep /api/auth
 ```
 
 You should see your laptop's public IP, not Google's (trimmed):
@@ -99,7 +105,8 @@ You should see your laptop's public IP, not Google's (trimmed):
 Google's load balancer sits between you and the backend and writes your IP and its own address into
 the `X-Forwarded-For` header. `TRUST_PROXY: "2"` in the ConfigMap tells the backend to trust exactly
 those two hops. Without it every visitor would look like Google, and all of them would share one
-login limit (30 attempts per 15 minutes). With it, every visitor has a limit of their own.
+login limit. With it, every visitor has a limit of their own: 500 attempts per 15 minutes, set by
+`AUTH_RATE_LIMIT_MAX` (the default of 30 is too low for a class sharing one campus Wi-Fi IP).
 
 ## 7. (Optional) Start HTTPS now
 
@@ -111,8 +118,8 @@ In Cloudflare, *DNS → Records → Add record*: type `A`, name `k8s`, IPv4 addr
 `manifests/08-https.yaml` first. Then:
 
 ```console
-cloudshell$ dig +short k8s.gulfheight.com @1.1.1.1
-cloudshell$ kubectl apply -f manifests/08-https.yaml
+laptop$ dig +short k8s.gulfheight.com @1.1.1.1
+laptop$ kubectl apply -f manifests/08-https.yaml
 ```
 
 You should see your IP, then the certificate request and the Ingress updated in place:
@@ -136,8 +143,8 @@ Next: ship a new version while people play. [8. Rolling updates](08-rolling-upda
 <details>
 <summary>Going deeper</summary>
 
-- **What Google built:** `gcloud compute forwarding-rules list`, `gcloud compute url-maps list` and
-  `gcloud compute backend-services list` show the pieces of the load balancer.
+- **What Google built:** **Network services → Load balancing** shows the load balancer (its name
+  starts with `k8s2-`): the front end on your IP, the two path rules and the backends.
 - **Is every pod healthy for Google?** `kubectl describe ingress bugsquash` shows the annotation
   `ingress.kubernetes.io/backends` with `HEALTHY` or `UNHEALTHY` per backend.
 - **Why the IP is global:** a GKE Ingress makes a global external Application Load Balancer.
@@ -150,8 +157,8 @@ Next: ship a new version while people play. [8. Rolling updates](08-rolling-upda
 
 | Symptom | Fix |
 |---------|-----|
-| `ADDRESS` still empty after 10 minutes | `kubectl describe ingress bugsquash` and read the events. `the given static IP name bugsquash-ip doesn't translate to an existing static IP`: reserve it with `--global` (step 1). |
+| `ADDRESS` still empty after 10 minutes | `kubectl describe ingress bugsquash` and read the events. `the given static IP name bugsquash-ip doesn't translate to an existing static IP`: reserve it as **Global** (step 1). |
 | `404`, `502` or *Server Error* from Google | Still building: wait up to 10 minutes. Longer? All frontend and backend pods must be `1/1` in `kubectl get pods`. |
-| `echo $IP` prints an empty line | New tab or Cloud Shell reconnected: run step 1's first line again. |
-| `Too many attempts. The bugs need a break too…` | 30 sign-ups or logins per IP per 15 minutes. A whole class on one campus Wi-Fi shares one public IP: wait, or use your phone's data. |
-| `dig` prints nothing, or not your IP | The record is missing, wrong, or proxied (orange cloud): set it to **DNS only**. |
+| `echo $IP` prints an empty line | New terminal window: set `IP` again (step 1). |
+| `Too many attempts. The bugs need a break too…` | 500 sign-ups or logins per IP per 15 minutes were used up (a class on one Wi-Fi shares one IP): wait 15 minutes, or use your phone's data. |
+| `dig` prints nothing, or not your IP | The record is missing, wrong, or proxied (orange cloud): set it to **DNS only**. No `dig`? `nslookup k8s.gulfheight.com 1.1.1.1`. |

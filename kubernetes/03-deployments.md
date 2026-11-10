@@ -17,8 +17,8 @@ Why: `replicas: 3` and a pod `template` are the heart of the file. The rest (hea
 a 15-second pause, a spread rule) comes back on later pages.
 
 ```console
-cloudshell$ kubectl apply -f manifests/02-frontend-deployment.yaml
-cloudshell$ kubectl rollout status deployment/frontend --timeout=120s
+laptop$ kubectl apply -f manifests/02-frontend-deployment.yaml
+laptop$ kubectl rollout status deployment/frontend --timeout=120s
 ```
 
 You should see:
@@ -36,8 +36,8 @@ deployment "frontend" successfully rolled out
 Why: a Deployment owns a ReplicaSet, which owns the pods, and the names show the family tree.
 
 ```console
-cloudshell$ kubectl get deployment,replicaset,pods
-cloudshell$ kubectl get pods -o custom-columns=POD:.metadata.name,NODE:.spec.nodeName,STATUS:.status.phase
+laptop$ kubectl get deployment,replicaset,pods
+laptop$ kubectl get pods -o custom-columns=POD:.metadata.name,NODE:.spec.nodeName,STATUS:.status.phase
 ```
 
 You should see (ours; your names differ):
@@ -68,8 +68,8 @@ each node, so in each zone: a spread rule at the bottom of the file asks for tha
 Why: to watch the control loop notice the difference and fix it.
 
 ```console
-cloudshell$ kubectl delete pod <POD_NAME> --wait=false
-cloudshell$ sleep 2; kubectl get pods -l app=frontend
+laptop$ kubectl delete pod <POD_NAME> --wait=false
+laptop$ sleep 2; kubectl get pods -l app=frontend
 ```
 
 Use one of **your** pod names from step 2. `--wait=false` returns at once instead of waiting for
@@ -92,9 +92,12 @@ requests it is serving before it stops (page 8 explains that pause).
 
 Why: more visitors coming? Change one number.
 
+**Look in the console:** open **Kubernetes Engine → Workloads** first. While you scale, `frontend`
+goes from 3 to 5 pods there and, in step 5, back to 3.
+
 ```console
-cloudshell$ kubectl scale deployment/frontend --replicas=5
-cloudshell$ kubectl rollout status deployment/frontend --timeout=90s; kubectl get pods -l app=frontend
+laptop$ kubectl scale deployment/frontend --replicas=5
+laptop$ kubectl rollout status deployment/frontend --timeout=90s; kubectl get pods -l app=frontend
 ```
 
 You should see five pods (trimmed):
@@ -115,8 +118,8 @@ frontend-d6d8d8454-zvd9c   1/1     Running   0          24s
 Why: the file still says `replicas: 3`. Who wins, your command or the file?
 
 ```console
-cloudshell$ kubectl apply -f manifests/02-frontend-deployment.yaml
-cloudshell$ sleep 5; kubectl get pods -l app=frontend
+laptop$ kubectl apply -f manifests/02-frontend-deployment.yaml
+laptop$ sleep 5; kubectl get pods -l app=frontend
 ```
 
 You should see `configured` and three pods again:

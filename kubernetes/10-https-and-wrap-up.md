@@ -24,8 +24,8 @@ In Cloudflare, *DNS → Records → Add record*: type `A`, name `k8s`, IPv4 addr
 **Proxy status: DNS only** (grey cloud). Then:
 
 ```console
-cloudshell$ dig +short k8s.gulfheight.com @1.1.1.1
-cloudshell$ kubectl apply -f manifests/08-https.yaml
+laptop$ dig +short k8s.gulfheight.com @1.1.1.1
+laptop$ kubectl apply -f manifests/08-https.yaml
 ```
 
 You should see your IP, then the certificate request and the Ingress updated in place:
@@ -42,8 +42,8 @@ Why: Google checks the name, issues the certificate and installs it on the load 
 takes 15 to 60 minutes.
 
 ```console
-cloudshell$ kubectl get managedcertificate bugsquash-cert
-cloudshell$ curl -sI https://k8s.gulfheight.com/ | head -1
+laptop$ kubectl get managedcertificate bugsquash-cert
+laptop$ curl -sI https://k8s.gulfheight.com/ | head -1
 ```
 
 You should see (expected) `STATUS` go from empty to `Provisioning` to `Active`, and a few minutes
@@ -66,8 +66,8 @@ Open `https://k8s.gulfheight.com`: padlock.
 Why: like the 301 of Stage 3, no visitor should stay on plain HTTP.
 
 ```console
-cloudshell$ kubectl apply -f manifests/09-https-redirect.yaml
-cloudshell$ curl -sI http://k8s.gulfheight.com/ | grep -iE '^(HTTP|location)'
+laptop$ kubectl apply -f manifests/09-https-redirect.yaml
+laptop$ curl -sI http://k8s.gulfheight.com/ | grep -iE '^(HTTP|location)'
 ```
 
 You should see (expected; the redirect needs a few minutes to reach the load balancer):
@@ -85,10 +85,10 @@ Why: with HTTPS everywhere, the cookie may be *Secure*. But a ConfigMap change d
 pods (a container reads its environment once, at start), so you restart the backend yourself.
 
 ```console
-cloudshell$ kubectl patch configmap bugsquash-config -p '{"data":{"COOKIE_SECURE":"true"}}'
-cloudshell$ kubectl rollout restart deployment/backend
-cloudshell$ kubectl rollout status deployment/backend --timeout=180s
-cloudshell$ kubectl exec deployment/backend -- printenv COOKIE_SECURE
+laptop$ kubectl patch configmap bugsquash-config -p '{"data":{"COOKIE_SECURE":"true"}}'
+laptop$ kubectl rollout restart deployment/backend
+laptop$ kubectl rollout status deployment/backend --timeout=180s
+laptop$ kubectl exec deployment/backend -- printenv COOKIE_SECURE
 ```
 
 You should see (expected, trimmed):
@@ -118,26 +118,21 @@ is new is that the promise holds across three machines. (In our folder, apply th
 > The cluster, its three nodes, the load balancer, the disk and the static IP cost a few US$ per day
 > together, even when nobody plays. See the [pricing calculator](https://cloud.google.com/products/calculator).
 
-Why this order: deleting the namespace first makes Kubernetes remove the load balancer and the disk
-it created; then the cluster goes; the IP last.
+Why this order: the namespace first, because then Kubernetes removes the load balancer and the disk
+it created. Delete the cluster first and the load balancer can stay behind, costing money.
 
-```console
-cloudshell$ kubectl delete namespace bugsquash
-cloudshell$ gcloud container clusters delete bugsquash --region europe-central2
-cloudshell$ gcloud compute addresses delete bugsquash-ip --global
-```
+1. In your terminal:
 
-Answer `Y` to each question. You should see (expected; the first two take a few minutes each):
+   ```console
+   laptop$ kubectl delete namespace bugsquash
+   ```
 
-```text
-namespace "bugsquash" deleted
-Deleting cluster bugsquash...done.
-Deleted [https://container.googleapis.com/v1/projects/<PROJECT_ID>/zones/europe-central2/clusters/bugsquash].
-Deleted [https://www.googleapis.com/compute/v1/projects/<PROJECT_ID>/global/addresses/bugsquash-ip].
-```
-
-Doing the lesson again soon? Skip the last command: a kept IP costs a little, and the DNS record
-stays valid. Deleted the IP? Delete the Cloudflare record too.
+   You should see `namespace "bugsquash" deleted`, after about 4 minutes in our test.
+2. In the console, **Kubernetes Engine → Clusters**: tick `bugsquash`, click **Delete** and confirm.
+   It disappears from the list after a few minutes.
+3. **VPC network → IP addresses**: tick `bugsquash-ip` and click **Release static address**. Doing
+   the lesson again soon? Keep it instead (it costs a little) and the DNS record stays valid; once
+   it is released, delete the Cloudflare record too.
 
 ## What's next
 
@@ -151,7 +146,8 @@ stays valid. Deleted the IP? Delete the Cloudflare record too.
 
 - HTTPS works with a Google-managed certificate, HTTP redirects to it, and the cookie is *Secure*.
 - You can name the Kubernetes object behind every part of the Compose file.
-- `gcloud container clusters list` and `gcloud compute addresses list` print nothing for `bugsquash`.
+- In the console, **Clusters**, **VM instances** and **Network services → Load balancing** no longer
+  show anything of `bugsquash`.
 
 Back to the [lesson map](README.md). Keep the [cheat sheet](cheatsheet.md).
 

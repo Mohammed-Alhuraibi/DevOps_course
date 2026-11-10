@@ -15,7 +15,7 @@ commands with Bug Squash.
 
 | Page | Concept | Hands-on | ≈ min |
 |------|---------|----------|:-----:|
-| [0. Create the cluster](00-create-the-cluster.md) | GKE, Cloud Shell, namespaces | a 3-zone cluster, a static IP, the course files | 15 |
+| [0. Create the cluster](00-create-the-cluster.md) | GKE in the console, kubectl, namespaces | a 3-zone cluster and a static IP in the console, kubectl on your laptop | 15 |
 | [1. The big picture](01-the-big-picture.md) | control plane and worker nodes | find both halves in your own cluster | 10 |
 | [2. Pods](02-pods.md) | the smallest thing Kubernetes runs | run the frontend, look inside, open it in the browser | 12 |
 | [3. Deployments](03-deployments.md) | desired state, self-healing | kill a pod, scale to 5, apply the file again | 12 |
@@ -30,8 +30,11 @@ commands with Bug Squash.
 
 ## How the pages work
 
-- Every command runs in **Google Cloud Shell**, a terminal in your browser, shown as `cloudshell$`.
-  From page 0, step 6 on, you stay in the `DevOps_course/kubernetes` folder.
+- Commands run in **your laptop's terminal**, shown as `laptop$`. From page 0, step 5 on, you stay in
+  the `DevOps_course/kubernetes` folder.
+- Clicks happen in the **Google Cloud console** (<https://console.cloud.google.com>): creating the
+  cluster, stopping a node, cleaning up. **Look in the console** lines show where to *see* what a
+  command just did.
 - Each page: a short story, a slide, numbered steps (*Why*, the command, *You should see*), a
   checkpoint and a troubleshooting table.
 - The outputs come from a real run on a regional GKE cluster on 10 November 2026. Your node names,
@@ -42,7 +45,8 @@ commands with Bug Squash.
 
 - A Google Cloud project with billing enabled (free-trial credit works) in which you are Owner or
   Editor.
-- A browser. Nothing to install: Cloud Shell already has `gcloud`, `kubectl` and `git`.
+- A laptop with a bash-style terminal (macOS, Linux, or WSL on Windows), `git` and a browser. Page 0
+  installs the Google Cloud CLI and `kubectl` (once, about 10 minutes).
 - The [Docker lesson](../docs/containers-and-docker.md): images, containers, volumes and Compose.
 - For HTTPS only: a domain in Cloudflare. The course uses `k8s.gulfheight.com`; without a domain you
   watch that part on the instructor's screen.
@@ -55,21 +59,24 @@ commands with Bug Squash.
 ## Before class (instructor)
 
 1. Push the `kubernetes/` folder to the repository's default branch, so that `git clone` (page 0,
-   step 6) gives students this folder.
-2. About an hour before class, run page 0 for your demo cluster (the cluster takes about 4 minutes)
-   and reserve `bugsquash-ip`. Point `k8s.gulfheight.com` at that IP in Cloudflare (*DNS only*).
-3. The Ingress (page 7) needs about 5 minutes for its address and 7 until the site answers: apply it,
+   step 5) gives students this folder. Ask students to do page 0, step 3 (installing the tools) at
+   home: it is the slowest part.
+2. About an hour before class, create your demo cluster and `bugsquash-ip` in the console (page 0,
+   steps 1-2; the cluster takes about 4 minutes) and connect your laptop (steps 3-4).
+3. A static IP is **new every time** you reserve it: point the Cloudflare `A` record for
+   `k8s.gulfheight.com` at the address the console shows now (*DNS only*), not at last time's.
+4. The Ingress (page 7) needs about 5 minutes for its address and 7 until the site answers: apply it,
    then explain the slide while Google builds.
-4. Apply `08-https.yaml` right after page 7 ([page 7, step 7](07-ingress.md#7-optional-start-https-now)):
+5. Apply `08-https.yaml` right after page 7 ([page 7, step 7](07-ingress.md#7-optional-start-https-now)):
    the certificate takes 15-60 minutes, so it is *Active* by page 10.
-5. Before the high-availability demo, check which zone Postgres runs in, and stop a node in a
+6. Before the high-availability demo, check which zone Postgres runs in, and stop a node in a
    **different** zone ([page 9, step 2](09-high-availability.md#2-find-the-databases-zone)). Our
    test stopped one node; with two stopped, everything must fit on the last `e2-medium`, so rehearse
    that before showing it.
 
 ## Cheat sheet
 
-[cheatsheet.md](cheatsheet.md): the everyday `kubectl` commands of this lesson and the four `gcloud`
-commands, on one page.
+[cheatsheet.md](cheatsheet.md): the everyday `kubectl` commands of this lesson, the one `gcloud`
+command you need in class, and where to click in the console, on one page.
 
 **Start:** [0. Create the cluster](00-create-the-cluster.md)

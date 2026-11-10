@@ -16,7 +16,7 @@ you know why the files say `sleep 15`.
 Why: the footer shows which frontend commit is live, so you can see the update land.
 
 ```console
-cloudshell$ kubectl get deployment frontend -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
+laptop$ kubectl get deployment frontend -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
 ```
 
 You should see `alhuraibisaeed/bugsquash-frontend:sha-0902b98`, and in your browser at
@@ -26,14 +26,14 @@ You should see `alhuraibisaeed/bugsquash-frontend:sha-0902b98`, and in your brow
 
 Why: proof beats promises. One request per second, and you see the status code of every answer.
 
-Click **+** in Cloud Shell's tab bar to open a second terminal, and run in it:
+Open a second terminal window and run in it (`<your IP>` is the address of `bugsquash-ip`):
 
 ```console
-cloudshell$ IP=$(gcloud compute addresses describe bugsquash-ip --global --format='value(address)')
-cloudshell$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/; sleep 1; done
+laptop$ IP=<your IP>
+laptop$ while true; do curl -s -m 5 -o /dev/null -w "%{http_code} " http://$IP/; sleep 1; done
 ```
 
-You should see a growing line of `200 200 200 …`. Leave it running and go back to the first tab.
+You should see a growing line of `200 200 200 …`. Leave it running and go back to the first window.
 
 ## 3. Roll out v2
 
@@ -41,9 +41,9 @@ Why: `set image` changes one field of the pod template; Kubernetes sees a new te
 the pods one by one.
 
 ```console
-cloudshell$ kubectl set image deployment/frontend frontend=alhuraibisaeed/bugsquash-frontend:sha-dcb0790
-cloudshell$ kubectl rollout status deployment/frontend --timeout=180s
-cloudshell$ kubectl get pods -l app=frontend -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[0].image
+laptop$ kubectl set image deployment/frontend frontend=alhuraibisaeed/bugsquash-frontend:sha-dcb0790
+laptop$ kubectl rollout status deployment/frontend --timeout=180s
+laptop$ kubectl get pods -l app=frontend -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[0].image
 ```
 
 You should see (trimmed) the rollout move one pod at a time, then new and old pods side by side:
@@ -62,14 +62,14 @@ frontend-d6d8d8454-w85qg    alhuraibisaeed/bugsquash-frontend:sha-0902b98
 ```
 
 The last pod is an old one taking its 15-second goodbye. Reload the game: the footer says
-**Web dcb0790**. The loop in the second tab still shows only `200`.
+**Web dcb0790**. The loop in the second window still shows only `200`.
 
 ## 4. Look at the history
 
 Why: every change of the template is a numbered revision, kept so that you can go back.
 
 ```console
-cloudshell$ kubectl rollout history deployment/frontend
+laptop$ kubectl rollout history deployment/frontend
 ```
 
 You should see:
@@ -86,8 +86,8 @@ REVISION  CHANGE-CAUSE
 Why: v2 has a bug? One command brings v1 back, with the same one-by-one swap.
 
 ```console
-cloudshell$ kubectl rollout undo deployment/frontend
-cloudshell$ kubectl rollout status deployment/frontend --timeout=180s
+laptop$ kubectl rollout undo deployment/frontend
+laptop$ kubectl rollout status deployment/frontend --timeout=180s
 ```
 
 You should see a warning, then the same rollout as in step 3 (trimmed):
@@ -106,11 +106,11 @@ Reload the game: **Web 0902b98** again.
 Why: after `set image` and `undo`, apply the file, so that the cluster and Git agree again (page 3).
 
 ```console
-cloudshell$ kubectl apply -f manifests/02-frontend-deployment.yaml
+laptop$ kubectl apply -f manifests/02-frontend-deployment.yaml
 ```
 
-You should see: `deployment.apps/frontend configured`. Stop the loop in the second tab with
-**Ctrl+C**, but keep the tab open: page 9 uses it.
+You should see: `deployment.apps/frontend configured`. Stop the loop in the second window with
+**Ctrl+C**, but keep the window open: page 9 uses it.
 
 ## Why the files say `sleep 15`
 
@@ -161,4 +161,4 @@ Next: what if a whole machine dies? [9. High availability](09-high-availability.
 | New pods show `ErrImagePull` or `ImagePullBackOff` | Typo in the tag. The old pods keep serving meanwhile: `kubectl rollout undo deployment/frontend`. |
 | The footer still shows the old version | Wait for `successfully rolled out`, then reload with Ctrl+Shift+R. |
 | A few `000` or `502` appear during the rollout | The pods run without the pause: `kubectl apply -f manifests/02-frontend-deployment.yaml`, then try again. |
-| The loop prints only `000`, from the start | `$IP` is empty in the second tab: run its first line again. |
+| The loop prints only `000`, from the start | `$IP` is empty in the second window: set it again (step 2). |

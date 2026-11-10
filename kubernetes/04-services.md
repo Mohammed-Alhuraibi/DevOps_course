@@ -16,8 +16,8 @@ spread over all three pods.
 Why: the Service finds its pods by the label `app=frontend`, the one in the Deployment's template.
 
 ```console
-cloudshell$ kubectl apply -f manifests/03-frontend-service.yaml
-cloudshell$ kubectl get service frontend
+laptop$ kubectl apply -f manifests/03-frontend-service.yaml
+laptop$ kubectl get service frontend
 ```
 
 You should see a fixed `CLUSTER-IP`, reachable only inside the cluster (`EXTERNAL-IP` is `<none>`):
@@ -33,7 +33,7 @@ frontend   ClusterIP   34.118.226.213   <none>        8080/TCP   0s
 Why: Kubernetes keeps a live list of the ready pods behind every Service.
 
 ```console
-cloudshell$ kubectl get endpointslices -l kubernetes.io/service-name=frontend
+laptop$ kubectl get endpointslices -l kubernetes.io/service-name=frontend
 ```
 
 You should see three pod IPs, the same as in the `IP` column of `kubectl get pods -o wide`:
@@ -45,14 +45,17 @@ frontend-9zh5r   IPv4          8080    10.76.2.9,10.76.1.8,10.76.0.9   1s
 
 Delete a pod and this list changes within seconds. The Service's name and IP never do.
 
+**Look in the console:** **Kubernetes Engine → Gateways, Services & Ingress → Services** lists
+`frontend` as a *Cluster IP* service; click it to see the pods behind it.
+
 ## 3. Start a toolbox pod
 
 Why: Service names work only inside the cluster, so you need a pod to call from. This one has
 `curl` and sleeps for a day, waiting for your commands; later pages use it too.
 
 ```console
-cloudshell$ kubectl run toolbox --image=curlimages/curl:8.23.0 --restart=Never --command -- sleep 86400
-cloudshell$ kubectl wait --for=condition=Ready pod/toolbox --timeout=60s
+laptop$ kubectl run toolbox --image=curlimages/curl:8.23.0 --restart=Never --command -- sleep 86400
+laptop$ kubectl wait --for=condition=Ready pod/toolbox --timeout=60s
 ```
 
 You should see:
@@ -69,7 +72,7 @@ pod/toolbox condition met
 Why: inside the cluster, DNS turns the name `frontend` into the Service's IP.
 
 ```console
-cloudshell$ kubectl exec toolbox -- curl -s http://frontend:8080/healthz
+laptop$ kubectl exec toolbox -- curl -s http://frontend:8080/healthz
 ```
 
 You should see: `ok`.
@@ -83,8 +86,8 @@ You should see: `ok`.
 Why: one name, three pods. Are the calls really spread?
 
 ```console
-cloudshell$ kubectl exec toolbox -- sh -c 'for i in $(seq 1 9); do curl -s -o /dev/null http://frontend:8080/; done'
-cloudshell$ kubectl logs -l app=frontend --prefix --since=30s | grep 'GET / ' | awk '{print $1}' | sort | uniq -c
+laptop$ kubectl exec toolbox -- sh -c 'for i in $(seq 1 9); do curl -s -o /dev/null http://frontend:8080/; done'
+laptop$ kubectl logs -l app=frontend --prefix --since=30s | grep 'GET / ' | awk '{print $1}' | sort | uniq -c
 ```
 
 The first line sends 9 requests to the Service. The second reads the last 30 seconds of logs of

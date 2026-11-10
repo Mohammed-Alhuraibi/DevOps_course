@@ -17,7 +17,7 @@ a lone pod is not enough.
 Why: every Kubernetes file has the same four parts. Read this one and you can read them all.
 
 ```console
-cloudshell$ grep -v '^#' manifests/01-pod.yaml
+laptop$ grep -v '^#' manifests/01-pod.yaml
 ```
 
 You should see the file without its header comment:
@@ -46,9 +46,9 @@ Why: `apply` sends the file to the API server, the scheduler picks a node, and t
 starts the container.
 
 ```console
-cloudshell$ kubectl apply -f manifests/01-pod.yaml
-cloudshell$ kubectl wait --for=condition=Ready pod/hello-frontend --timeout=120s
-cloudshell$ kubectl get pods -o wide
+laptop$ kubectl apply -f manifests/01-pod.yaml
+laptop$ kubectl wait --for=condition=Ready pod/hello-frontend --timeout=120s
+laptop$ kubectl get pods -o wide
 ```
 
 You should see (trimmed; `-o wide` adds the IP and the node):
@@ -65,7 +65,7 @@ hello-frontend   1/1     Running   0          7s    10.76.1.7   gke-bugsquash-de
 Why: when a pod misbehaves, the events at the end of `describe` are the first place to look.
 
 ```console
-cloudshell$ kubectl describe pod hello-frontend | sed -n '/^Events:/,$p'
+laptop$ kubectl describe pod hello-frontend | sed -n '/^Events:/,$p'
 ```
 
 You should see the scheduler choose a node, then the kubelet pull and start the image (trimmed;
@@ -85,8 +85,8 @@ the `sed` prints only from the `Events:` line on):
 Why: the same two habits as `docker logs` and `docker exec`, now through the cluster.
 
 ```console
-cloudshell$ kubectl logs hello-frontend | tail -3
-cloudshell$ kubectl exec hello-frontend -- sh -c 'hostname; id; cat /etc/os-release | head -1'
+laptop$ kubectl logs hello-frontend | tail -3
+laptop$ kubectl exec hello-frontend -- sh -c 'hostname; id; cat /etc/os-release | head -1'
 ```
 
 You should see nginx's last start-up lines, then the pod's name as its hostname and a non-root user:
@@ -105,10 +105,10 @@ exactly as it was built. `--` separates kubectl's own options from the command t
 ## 5. See it in your browser
 
 Why: the pod's IP works only inside the cluster. `port-forward` opens a private tunnel from port
-8080 in Cloud Shell to port 8080 of the pod.
+8080 on your laptop to port 8080 of the pod.
 
 ```console
-cloudshell$ kubectl port-forward pod/hello-frontend 8080:8080
+laptop$ kubectl port-forward pod/hello-frontend 8080:8080
 ```
 
 You should see the tunnel open; the command keeps running:
@@ -118,18 +118,18 @@ Forwarding from 127.0.0.1:8080 -> 8080
 Forwarding from [::1]:8080 -> 8080
 ```
 
-Now click **Web Preview** in the Cloud Shell toolbar (top right of the terminal panel; hover the
-icons to find it) and choose **Preview on port 8080**. A new tab opens the Bug Squash home page, and
-the terminal prints `Handling connection for 8080`. The footer says **Web 0902b98** and **API
-unreachable**: no backend yet (page 6). Press **Ctrl+C** in the terminal to close the tunnel.
+Now open <http://localhost:8080> in your browser: the Bug Squash home page, served by the pod in
+Warsaw. The terminal prints `Handling connection for 8080` for each request. The footer says
+**Web 0902b98** and **API unreachable**: no backend yet (page 6). Press **Ctrl+C** in the terminal
+to close the tunnel.
 
 ## 6. Delete it
 
 Why: to see what Kubernetes does when a pod disappears.
 
 ```console
-cloudshell$ kubectl delete pod hello-frontend
-cloudshell$ kubectl get pods
+laptop$ kubectl delete pod hello-frontend
+laptop$ kubectl get pods
 ```
 
 You should see:
@@ -161,5 +161,5 @@ Next: let Kubernetes keep pods alive for you. [3. Deployments](03-deployments.md
 |---------|-----|
 | `STATUS` is `ErrImagePull` or `ImagePullBackOff` | The image name or tag is wrong: compare it with the file. `describe` (step 3) shows the exact error. |
 | `STATUS` stays `Pending` | No node can take it yet: the events in `describe` say why. On a new cluster, wait a minute. |
-| Web Preview: *Could not connect to Cloud Shell on port 8080* | The tunnel isn't running: start `kubectl port-forward` again and leave it running. |
-| `unable to listen on any of the requested ports` | Another tunnel still holds 8080: stop it with Ctrl+C, or use `8081:8080` and *Change port* to 8081 in Web Preview. |
+| The browser can't reach `localhost:8080` | The tunnel isn't running: start `kubectl port-forward` again and leave that terminal open. |
+| `unable to listen on any of the requested ports` | Another program holds port 8080: stop it, or use `8081:8080` and open <http://localhost:8081>. |

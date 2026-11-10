@@ -16,9 +16,9 @@ with your own eyes why a Secret is not a safe.
 Why: plain settings are safe to keep in Git, so they live in a file like everything else.
 
 ```console
-cloudshell$ sed 's/ *#.*//' manifests/04-config.yaml | grep .
-cloudshell$ kubectl apply -f manifests/04-config.yaml
-cloudshell$ kubectl get configmap bugsquash-config
+laptop$ sed 's/ *#.*//' manifests/04-config.yaml | grep .
+laptop$ kubectl apply -f manifests/04-config.yaml
+laptop$ kubectl get configmap bugsquash-config
 ```
 
 The first line shows the file without its comments and blank lines. You should see the settings,
@@ -33,6 +33,7 @@ data:
   NODE_ENV: production
   COOKIE_SECURE: "false"
   TRUST_PROXY: "2"
+  AUTH_RATE_LIMIT_MAX: "500"
   POSTGRES_DB: bugsquash
   POSTGRES_USER: bugsquash
   PGHOST: postgres
@@ -44,9 +45,9 @@ NAME               DATA   AGE
 bugsquash-config   10     1s
 ```
 
-Three of them come back later: `PGHOST: postgres` is the name of the database's Service (page 6),
-`TRUST_PROXY` matters behind Google's load balancer (page 7), and `COOKIE_SECURE` turns `"true"`
-once the site has HTTPS (page 10).
+Four of them come back later: `PGHOST: postgres` is the name of the database's Service (page 6),
+`TRUST_PROXY` and `AUTH_RATE_LIMIT_MAX` matter behind Google's load balancer (page 7), and
+`COOKIE_SECURE` turns `"true"` once the site has HTTPS (page 10).
 
 ## 2. Create the Secret
 
@@ -54,10 +55,10 @@ Why: passwords must never be in Git, so you create the Secret with a command ins
 from random values that nobody ever types or sees.
 
 ```console
-cloudshell$ kubectl create secret generic bugsquash-secrets \
-              --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 24)" \
-              --from-literal=JWT_SECRET="$(openssl rand -hex 32)"
-cloudshell$ kubectl get secret bugsquash-secrets
+laptop$ kubectl create secret generic bugsquash-secrets \
+          --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 24)" \
+          --from-literal=JWT_SECRET="$(openssl rand -hex 32)"
+laptop$ kubectl get secret bugsquash-secrets
 ```
 
 `openssl rand -hex 24` prints 48 random characters, and `$( )` pastes them into the command.
@@ -75,8 +76,8 @@ bugsquash-secrets   Opaque   2      1s
 Why: to see that a Secret is disguised, not locked.
 
 ```console
-cloudshell$ kubectl get secret bugsquash-secrets -o jsonpath='{.data.JWT_SECRET}'; echo
-cloudshell$ kubectl get secret bugsquash-secrets -o jsonpath='{.data.JWT_SECRET}' | base64 -d; echo
+laptop$ kubectl get secret bugsquash-secrets -o jsonpath='{.data.JWT_SECRET}'; echo
+laptop$ kubectl get secret bugsquash-secrets -o jsonpath='{.data.JWT_SECRET}' | base64 -d; echo
 ```
 
 You should see a scrambled-looking string, then the real secret in plain text (ours, shortened here;
@@ -97,7 +98,7 @@ MThkNm…(88 characters)…
 Why: the next page starts the backend, and this is how it gets its settings without a new image.
 
 ```console
-cloudshell$ grep -A6 'envFrom' manifests/06-backend.yaml
+laptop$ grep -A6 'envFrom' manifests/06-backend.yaml
 ```
 
 You should see:

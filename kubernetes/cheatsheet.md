@@ -2,9 +2,9 @@
 
 [Lesson map](README.md) · [← 10. HTTPS and wrap-up](10-https-and-wrap-up.md)
 
-The everyday commands of this lesson, ready to copy. Run them in Cloud Shell from the
+The everyday commands of this lesson, ready to copy. Run them in your laptop's terminal from the
 `DevOps_course/kubernetes` folder. Replace `<POD_NAME>` with a name from `kubectl get pods`.
-The namespace is already `bugsquash` ([page 0, step 7](00-create-the-cluster.md#7-create-the-namespace)).
+The namespace is already `bugsquash` ([page 0, step 6](00-create-the-cluster.md#6-create-the-namespace)).
 
 ## Look
 
@@ -59,7 +59,7 @@ kubectl exec -it <POD_NAME> -- sh
 # Call a Service from inside the cluster (the toolbox pod of page 4)
 kubectl exec toolbox -- curl -s http://backend:3000/api/health
 
-# A private tunnel to a pod, then Web Preview -> Preview on port 8080 (Ctrl+C to stop)
+# A private tunnel to a pod: then open http://localhost:8080 (Ctrl+C to stop)
 kubectl port-forward pod/<POD_NAME> 8080:8080
 ```
 
@@ -94,23 +94,20 @@ kubectl delete -f manifests/01-pod.yaml
 kubectl delete namespace bugsquash
 ```
 
-## gcloud
+## gcloud and the console
 
 ```bash
-# Create the regional cluster: one e2-medium node in each of 3 zones
-gcloud container clusters create bugsquash --region europe-central2 \
-  --num-nodes 1 --machine-type e2-medium --disk-size 30 --release-channel regular
-
-# Connect kubectl to it (in every new terminal or on another machine)
-gcloud container clusters get-credentials bugsquash --region europe-central2
-
-# Switch a node off for the high-availability demo (start brings it back)
-gcloud compute instances stop <NODE> --zone <ZONE>
-
-# Delete the cluster (after kubectl delete namespace bugsquash)
-gcloud container clusters delete bugsquash --region europe-central2
+# Connect kubectl to the cluster (copy it from the cluster's Connect button)
+gcloud container clusters get-credentials bugsquash --region europe-central2 --project <PROJECT_ID>
 ```
 
-The static IP has commands of its own: `gcloud compute addresses create|describe|delete bugsquash-ip --global`
-([page 0, step 4](00-create-the-cluster.md#4-reserve-a-static-ip) and
-[the cleanup](10-https-and-wrap-up.md#clean-up)).
+Everything else is in the console (<https://console.cloud.google.com>):
+
+| You want to | Where |
+|-------------|-------|
+| create the cluster (**Standard**, see [page 0](00-create-the-cluster.md#1-create-the-cluster-in-the-console)) | Kubernetes Engine → Clusters → Create |
+| see nodes, pods, Services and the Ingress | Kubernetes Engine → Clusters → bugsquash → Nodes; Kubernetes Engine → Workloads; Kubernetes Engine → Gateways, Services & Ingress |
+| reserve or release the static IP | VPC network → IP addresses |
+| stop or start a node | Compute Engine → VM instances → tick the VM → Stop, or Start / Resume |
+| see the database disk and the load balancer | Compute Engine → Storage → Disks; Network services → Load balancing |
+| delete the cluster (after `kubectl delete namespace bugsquash`) | Kubernetes Engine → Clusters → bugsquash → Delete |

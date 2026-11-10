@@ -23,7 +23,7 @@ each of them in your own.
 Why: each node is an ordinary VM, and its zone label says which data centre it stands in.
 
 ```console
-cloudshell$ kubectl get nodes -L topology.kubernetes.io/zone
+laptop$ kubectl get nodes -L topology.kubernetes.io/zone
 ```
 
 You should see one node per zone (`-L` shows a label as an extra column):
@@ -38,12 +38,17 @@ gke-bugsquash-default-pool-7204075e-xh1n   Ready    <none>   25s   v1.36.4-gke.2
 These are the cooks. Each runs a kubelet, which takes orders from the control plane, and containerd,
 which starts the containers.
 
+**Look in the console:** **Kubernetes Engine → Clusters → bugsquash → Nodes** shows the same three
+nodes, and **Compute Engine → VM instances** shows them as three ordinary VMs called
+`gke-bugsquash-default-pool-…`, the same kind as the course VM. Never change them by hand: GKE
+manages them (page 9 stops one on purpose).
+
 ## 2. Find the brain
 
 Why: kubectl only ever talks to one thing, the control plane's API server.
 
 ```console
-cloudshell$ kubectl cluster-info | head -2
+laptop$ kubectl cluster-info | head -2
 ```
 
 You should see:
@@ -62,7 +67,7 @@ Why: Kubernetes runs its own helpers (logs, metrics, storage drivers, DNS) as po
 `kube-system` namespace.
 
 ```console
-cloudshell$ kubectl get pods -n kube-system | head -12
+laptop$ kubectl get pods -n kube-system | head -12
 ```
 
 You should see a list like this one (trimmed). On a brand-new cluster many are still starting:
@@ -93,9 +98,6 @@ Next: the smallest thing Kubernetes runs. [2. Pods](02-pods.md).
 <details>
 <summary>Going deeper</summary>
 
-- **Nodes are just VMs.** `gcloud compute instances list` shows the three nodes as ordinary Compute
-  Engine VMs, like the course VM. Never change them by hand: GKE manages them (page 9 stops one on
-  purpose).
 - **Every command is an HTTPS request.** Add `-v=6` to any kubectl command, for example
   `kubectl get nodes -v=6`, to see the request it sends to the API server.
 
@@ -106,5 +108,5 @@ Next: the smallest thing Kubernetes runs. [2. Pods](02-pods.md).
 | Symptom | Fix |
 |---------|-----|
 | A node shows `NotReady` | The cluster is still finishing: wait a minute and run the command again. |
-| `The connection to the server localhost:8080 was refused` | kubectl has no cluster: `gcloud container clusters get-credentials bugsquash --region europe-central2`. |
+| `The connection to the server localhost:8080 was refused` | kubectl has no cluster: run the **Connect** command of [page 0, step 4](00-create-the-cluster.md#4-connect-kubectl-to-the-cluster). |
 | `kube-system` pods still not `Running` after 5 minutes | `kubectl get events -n kube-system --sort-by=.lastTimestamp \| tail` shows what they are waiting for. |
