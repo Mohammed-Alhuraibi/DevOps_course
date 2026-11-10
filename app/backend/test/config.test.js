@@ -51,6 +51,13 @@ describe('loadConfig', () => {
     assert.throws(() => loadConfig({ AUTH_RATE_LIMIT_MAX: '0' }), /AUTH_RATE_LIMIT_MAX/);
   });
 
+  it('trusts private proxies by default and accepts TRUST_PROXY as a hop count or a list', () => {
+    assert.equal(loadConfig({}).trustProxy, 'loopback, linklocal, uniquelocal');
+    assert.equal(loadConfig({ TRUST_PROXY: '2' }).trustProxy, 2);
+    assert.equal(loadConfig({ TRUST_PROXY: 'loopback, 10.0.0.0/8' }).trustProxy, 'loopback, 10.0.0.0/8');
+    assert.throws(() => loadConfig({ TRUST_PROXY: '$(rm -rf /)' }), /TRUST_PROXY/);
+  });
+
   it('returns a frozen object', () => {
     assert.ok(Object.isFrozen(loadConfig({})));
   });

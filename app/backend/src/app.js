@@ -69,7 +69,10 @@ function createApp({ db, config = loadConfig(), logger = console }) {
   // publishing forwards the connection. In production the proxy container
   // connects from its own 172.x address. That is why 'uniquelocal' must be
   // trusted, not just loopback.
-  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
+  // On Kubernetes behind Google's load balancer, set TRUST_PROXY=2 instead
+  // (see config.js): otherwise every visitor would look like the load
+  // balancer, and they would all share ONE login rate limit.
+  app.set('trust proxy', config.trustProxy);
 
   // Sensible security headers (nosniff, frame protection, CSP...). HSTS is
   // left to the edge proxy: whoever terminates TLS owns the HTTPS policy.

@@ -54,6 +54,28 @@ function parseExpiresIn(value) {
   return expiresIn;
 }
 
+/** Default: trust only private addresses (our own proxies on Docker networks). */
+const DEFAULT_TRUST_PROXY = 'loopback, linklocal, uniquelocal';
+
+/**
+ * TRUST_PROXY decides which proxies may tell us the visitor's real IP (through
+ * the X-Forwarded-For header). Two forms, both understood by Express:
+ *   a list of names/ranges  "loopback, linklocal, uniquelocal" (the default:
+ *                           our nginx proxy containers, on private networks)
+ *   a hop count             "2" = trust the 2 closest hops. On Google
+ *                           Kubernetes Engine a request passes 2 hops we
+ *                           control: Google's load balancer appends both the
+ *                           visitor's IP and its own address to the header.
+ */
+function parseTrustProxy(value) {
+  const raw = (value || DEFAULT_TRUST_PROXY).trim();
+  if (/^\d+$/.test(raw)) return Number(raw);
+  if (!/^[\w.:/, -]+$/.test(raw)) {
+    throw new Error(`TRUST_PROXY has an invalid format: "${value}" (examples: 2, "loopback, uniquelocal")`);
+  }
+  return raw;
+}
+
 /**
  * Build the configuration object from an environment.
  * Throws (-> process exits non-zero) on invalid or missing required values.
@@ -88,6 +110,7 @@ function loadConfig(env = process.env) {
     // COOKIE_SECURE=false while the site is still plain HTTP); dev defaults to false.
     cookieSecure: parseBoolean('COOKIE_SECURE', env.COOKIE_SECURE, isProduction),
     authRateLimitMax: parsePositiveInt('AUTH_RATE_LIMIT_MAX', env.AUTH_RATE_LIMIT_MAX, 30),
+    trustProxy: parseTrustProxy(env.TRUST_PROXY),
 
     // We deliberately use the standard libpq variable names (PGHOST, PGUSER,
     // ...). `psql` and every other Postgres tool understand them too, so the
