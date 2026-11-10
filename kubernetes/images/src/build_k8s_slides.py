@@ -778,21 +778,32 @@ def slide_08():
         for k in range(3):
             out.append(pod(svc_x + 236 + k * 76, y + 14, 68, 44, slug, ""))
         out.append(text(svc_x + 236, y + 84, f"3 {name} pods", 17, 600, TEXT))
-    # same job as before
+    # same job as before (left) + who can reach what (right)
     by = 600
     out.append(rect(X0, by, X1 - X0, 188, R_CARD, fill=WASH))
-    out.append(text(X0 + 32, by + 46, "The same job you already know", 24, 800, INK))
-    halves = [(X0 + 32, "nginx", "Docker stages", "the nginx proxy on :80 and :443", "certbot renews the certificate"),
-              (820, "kubernetes", "Kubernetes on GKE", "an Ingress → a Google load balancer", "Google issues and renews it")]
-    for x, slug, t, a, b in halves:
-        out.append(logo(slug, x, by + 76, 40))
-        out.append(text(x + 56, by + 96, t, 21, 800, INK))
-        out.append(text(x + 56, by + 126, a, 19, 400, TEXT))
-        out.append(text(x + 56, by + 154, b, 19, 400, CAP))
+    out.append(text(X0 + 32, by + 44, "The same job you already know", 22, 800, INK))
+    rows = [("nginx", "Docker stages:", "nginx proxy + certbot"),
+            ("kubernetes", "Kubernetes on GKE:", "Ingress → Google load balancer")]
+    for i, (slug, t, a) in enumerate(rows):
+        yy = by + 92 + i * 52
+        out.append(logo(slug, X0 + 32, yy - 26, 34))
+        out.append(text(X0 + 80, yy - 2, t, 19, 800, INK))
+        out.append(text(X0 + 80 + text_width(t + " ", 19, 800), yy - 2, a, 19, 400, TEXT))
+    rx = 840
+    out.append(rect(rx - 24, by + 22, 2, 144, 1, fill=LINE))
+    out.append(text(rx, by + 44, "Who can reach what", 22, 800, INK))
+    reach = [("internet", "→ the load balancer only"),
+             ("load balancer", "→ /api to backend · / to frontend"),
+             ("backend", "→ postgres"),
+             ("postgres", "never reachable from outside")]
+    for i, (who, what) in enumerate(reach):
+        yy = by + 78 + i * 28
+        out.append(text(rx, yy, who, 18, 800, ACCENT_TEXT if who == "postgres" else INK))
+        out.append(text(rx + 150, yy, what, 18, 400, TEXT))
     return out, ("Ingress: the browser at k8s.gulfheight.com reaches a Google Cloud load balancer with the static IP bugsquash-ip, "
                  "created from the Ingress bugsquash, the one public door; /api, the API calls from the game in the browser, goes "
                  "to the Service backend:3000 and / (the files) to the Service frontend:8080; it does the job of the nginx proxy of "
-                 "the Docker stages, and Google issues the HTTPS certificate.")
+                 "the Docker stages, and Google issues the HTTPS certificate. Who can reach what: the internet reaches only the load balancer; the load balancer sends /api to the backend and / to the frontend; only the backend talks to postgres, which is never reachable from outside.")
 
 
 # ---------------------------------------------------------------------------

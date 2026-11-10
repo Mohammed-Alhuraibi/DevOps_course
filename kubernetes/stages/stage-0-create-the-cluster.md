@@ -150,6 +150,11 @@ No resources found in bugsquash namespace.
 
 The second command makes `bugsquash` your default, so no command in this lesson needs `-n bugsquash`.
 
+> [!IMPORTANT]
+> **Don't skip this step.** Without it, everything you create lands in the namespace `default`: the app
+> still works, but Stage 10's one-line cleanup deletes nothing and the load balancer keeps costing money.
+> Check any time: `kubectl config view --minify | grep namespace` must say `namespace: bugsquash`.
+
 ## Checkpoint
 
 - The console shows `bugsquash` with a green check, and `kubectl get nodes` lists three `Ready` nodes.

@@ -60,6 +60,10 @@ NAME             READY   STATUS    RESTARTS   AGE   IP          NODE
 hello-frontend   1/1     Running   0          7s    10.76.1.7   gke-bugsquash-default-pool-7204075e-xh1n
 ```
 
+The namespace check: `kubectl get pods` with no pods would say `No resources found in bugsquash
+namespace`. Does yours say `default`? Then do [Stage 0, step 6](stage-0-create-the-cluster.md#6-create-the-namespace)
+now, before anything else.
+
 ## 3. Read its story
 
 Why: when a pod misbehaves, the events at the end of `describe` are the first place to look.

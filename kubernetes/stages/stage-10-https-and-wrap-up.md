@@ -128,6 +128,14 @@ it created. Delete the cluster first and the load balancer can stay behind, cost
    ```
 
    You should see `namespace "bugsquash" deleted`, after about 4 minutes in our test.
+   Skipped Stage 0, step 6, so everything is in `default`? Delete by file instead (same effect):
+
+   ```console
+   laptop$ kubectl delete -f manifests/07-ingress.yaml -f manifests/06-backend.yaml -f manifests/05-postgres.yaml \
+           -f manifests/04-config.yaml -f manifests/03-frontend-service.yaml -f manifests/02-frontend-deployment.yaml
+   laptop$ kubectl delete secret bugsquash-secrets
+   laptop$ kubectl delete pod toolbox
+   ```
 2. In the console, **Kubernetes Engine → Clusters**: tick `bugsquash`, click **Delete** and confirm.
    It disappears from the list after a few minutes.
 3. **VPC network → IP addresses**: tick `bugsquash-ip` and click **Release static address**. Doing

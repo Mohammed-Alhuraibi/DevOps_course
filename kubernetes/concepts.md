@@ -90,7 +90,9 @@ shows the ticket gets the same coat, here a Google Persistent Disk, even after t
 
 One public door for the whole app, like the nginx proxy of the Docker stages. On GKE an **Ingress**
 becomes a real Google load balancer with one static IP: `/api` goes to the backend, everything else to
-the frontend.
+the frontend. The backend *is* reached from the internet, because the game in each player's browser
+calls `/api`, but only through this door and only for `/api`; its pods have no public address. The
+database is never reachable from outside: only the backend talks to it.
 
 **Hands-on:** [Stage 7](stages/stage-7-ingress.md): get the address and play in your browser.
 
