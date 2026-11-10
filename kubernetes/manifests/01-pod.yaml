@@ -1,0 +1,18 @@
+# Step 3 - a POD: the smallest thing Kubernetes runs.
+# One pod = one (or a few) containers that share an IP address.
+# Every Kubernetes file has the same four parts:
+#   apiVersion + kind   WHAT this is
+#   metadata            its NAME (and labels)
+#   spec                what you WANT
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-frontend
+  labels:
+    app: hello            # a label is a sticky note; Services find pods by label
+spec:
+  containers:
+    - name: frontend
+      image: alhuraibisaeed/bugsquash-frontend:sha-0902b98   # the same image Docker ran
+      ports:
+        - containerPort: 8080

@@ -1,0 +1,32 @@
+# Step 9 (part 2) - ONLY once the certificate is "Active": send every
+# http:// visitor to https:// (like the 301 of Stage 3). Applying this
+# before the certificate exists would redirect visitors to a broken page.
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: bugsquash-redirect
+spec:
+  redirectToHttps:
+    enabled: true
+---
+# The same Ingress, now with the certificate AND the redirect.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bugsquash
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: bugsquash-ip
+    networking.gke.io/managed-certificates: bugsquash-cert
+    networking.gke.io/v1beta1.FrontendConfig: bugsquash-redirect
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { number: 3000 } }
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { number: 8080 } }

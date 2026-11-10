@@ -1,0 +1,23 @@
+# Step 8 - an INGRESS: the one public door, like the nginx proxy of the Docker stages.
+# On GKE, applying this file makes Google create a real cloud load balancer
+# with the fixed IP "bugsquash-ip" (reserved in step 8), and route by path:
+#   /api...   -> the backend Service    (API calls from the game in the browser)
+#   /...      -> the frontend Service   (the HTML, CSS and JS files)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bugsquash
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: bugsquash-ip
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { number: 3000 } }
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { number: 8080 } }

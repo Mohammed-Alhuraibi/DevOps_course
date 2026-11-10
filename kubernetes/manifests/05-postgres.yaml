@@ -1,0 +1,72 @@
+# Step 7 - STORAGE: a database whose data outlives its pod.
+# Three objects, separated by "---":
+#   PersistentVolumeClaim  "I need a 5 GiB disk" (on GKE: a Google Persistent Disk)
+#   Deployment             one Postgres pod that mounts that disk
+#   Service                the stable name "postgres" the backend connects to
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+spec:
+  accessModes: [ReadWriteOnce]   # one node at a time may write to this disk
+  resources:
+    requests:
+      storage: 5Gi
+  # No storageClassName: the cluster's default (GKE: "standard-rwo", an SSD-backed disk).
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1                     # a database is NOT copied like the web pods (see step 10)
+  strategy:
+    type: Recreate                # stop the old pod before starting a new one: one writer per disk
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17.11-alpine3.24
+          ports:
+            - containerPort: 5432
+          env:
+            # Settings from the ConfigMap, the password from the Secret (step 6).
+            - name: POSTGRES_DB
+              valueFrom: { configMapKeyRef: { name: bugsquash-config, key: POSTGRES_DB } }
+            - name: POSTGRES_USER
+              valueFrom: { configMapKeyRef: { name: bugsquash-config, key: POSTGRES_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: bugsquash-secrets, key: POSTGRES_PASSWORD } }
+            # A brand-new cloud disk contains a "lost+found" folder, and Postgres
+            # refuses a non-empty data folder: keep the data one level deeper.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432

@@ -1,0 +1,72 @@
+# Step 7 - the BACKEND API: 3 copies, configured by the ConfigMap and Secret.
+# The backend keeps no data of its own (it is "stateless": players and scores
+# live in Postgres), so Kubernetes can run, kill and move copies freely.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: alhuraibisaeed/bugsquash-backend:sha-dcb0790
+          ports:
+            - containerPort: 3000
+          # Every key of the ConfigMap becomes an environment variable...
+          envFrom:
+            - configMapRef: { name: bugsquash-config }
+          # ...and these two come from the Secret.
+          env:
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: bugsquash-secrets, key: POSTGRES_PASSWORD } }
+            - name: JWT_SECRET            # the same secret in every copy: a login on
+              valueFrom: { secretKeyRef: { name: bugsquash-secrets, key: JWT_SECRET } }   # one copy works on all
+          # /api/health answers 200 only when the database answers too.
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            failureThreshold: 6           # a slow database is not a reason to restart the API
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 192Mi }
+          # Zero-downtime updates: when Kubernetes stops this pod, wait 15 s
+          # BEFORE the app shuts down, so the load balancer has time to stop
+          # sending visitors here (otherwise a few requests fail mid-update).
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "15"] }
+      # ---- High availability (Step 10): one copy per zone, fast failover ----
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule   # a rule, not a wish
+          nodeTaintsPolicy: Honor             # ...but ignore broken nodes, so pods can move off them
+          matchLabelKeys: [pod-template-hash] # spread each version on its own during updates
+          labelSelector:
+            matchLabels: { app: backend }
+      tolerations:
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  annotations:
+    # GKE only (ignored elsewhere): the Google load balancer of step 8 sends
+    # requests straight to the pods instead of hopping through a node.
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 3000

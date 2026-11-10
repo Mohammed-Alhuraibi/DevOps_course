@@ -1,0 +1,53 @@
+# Step 4 - a DEPLOYMENT: "always keep 3 copies of this pod running".
+# You describe the goal; a controller compares it with reality every few
+# seconds and fixes any difference (a pod died? it starts a new one).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 3                      # the desired state: 3 identical pods
+  selector:
+    matchLabels:
+      app: frontend                # "the pods I own are the ones labelled app=frontend"
+  template:                        # the pod to stamp out, 3 times
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: alhuraibisaeed/bugsquash-frontend:sha-0902b98
+          ports:
+            - containerPort: 8080
+          # Same idea as the Docker healthcheck: only send visitors to a pod
+          # that answers /healthz ("ready"), and restart one that stops ("alive").
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+          # Same idea as the Compose limits (cgroups): what the pod is
+          # guaranteed (requests) and what it may never exceed (limits).
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { memory: 64Mi }
+          # Zero-downtime updates: when Kubernetes stops this pod, wait 15 s
+          # BEFORE the app shuts down, so the load balancer has time to stop
+          # sending visitors here (otherwise a few requests fail mid-update).
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "15"] }
+      # ---- High availability (Step 10) ----------------------------------
+      # Spread the 3 copies over the 3 zones, so losing a zone loses only one.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule   # a rule, not a wish
+          nodeTaintsPolicy: Honor             # ...but ignore broken nodes, so pods can move off them
+          matchLabelKeys: [pod-template-hash] # spread each version on its own during updates
+          labelSelector:
+            matchLabels: { app: frontend }
+      # If a node stops answering, move its pods after 30 s (default: 5 min).
+      tolerations:
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }

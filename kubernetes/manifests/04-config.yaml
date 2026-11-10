@@ -1,0 +1,23 @@
+# Step 6 - a CONFIGMAP: the app's settings, kept OUT of the image.
+# Same image everywhere; only the settings change (dev, test, production).
+# This is the non-secret half of the .env.prod file from the Docker stages.
+# The secret half (passwords) goes into a Secret, created with kubectl
+# (see step 6) so that no password is ever written into Git.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bugsquash-config
+data:
+  NODE_ENV: production
+  # Plain HTTP for now. Step 9 switches to HTTPS and sets this to "true".
+  COOKIE_SECURE: "false"
+  # Google's load balancer adds 2 hops; trust them so the backend sees each
+  # visitor's real IP (the login rate limit is per visitor, not shared).
+  TRUST_PROXY: "2"
+  # Database settings, read by Postgres (POSTGRES_*) and by the backend (PG*).
+  POSTGRES_DB: bugsquash
+  POSTGRES_USER: bugsquash
+  PGHOST: postgres       # the Service name of the database (step 7)
+  PGPORT: "5432"
+  PGDATABASE: bugsquash
+  PGUSER: bugsquash

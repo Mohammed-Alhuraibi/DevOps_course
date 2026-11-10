@@ -1,0 +1,18 @@
+# Step 5 - a SERVICE: one stable name in front of changing pods.
+# Pods come and go (new names, new IPs). The Service "frontend" stays, and
+# spreads requests over every READY pod labelled app=frontend.
+# Inside the cluster it is simply reachable as http://frontend:8080
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  annotations:
+    # GKE only (ignored elsewhere): the Google load balancer of step 8 sends
+    # requests straight to the pods instead of hopping through a node.
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  selector:
+    app: frontend        # which pods: the label from the Deployment's template
+  ports:
+    - port: 8080         # the Service's port
+      targetPort: 8080   # the container's port
