@@ -49,8 +49,19 @@ Google's web load balancer is global, so the address must be global too.
 **VPC network → IP addresses → Reserve external static IP address**: name `bugsquash-ip`, IP
 version **IPv4**, type **Global**, then **Reserve**.
 
-You should see `bugsquash-ip` in the list with its address (ours: `136.81.240.49`). Write it down:
-every new reservation gets a different address.
+You should see `bugsquash-ip` in the list with its address (ours: `136.81.240.49`), with nothing yet
+under **In use by**. Write the address down: every new reservation gets a different one.
+
+> [!NOTE]
+> **Then what? Nothing yet, on purpose.** You have only *booked* the address, like a parking spot
+> with your name on it; the cluster does not know about it and does not need to. In
+> [Stage 7](stage-7-ingress.md#2-open-the-door) the Ingress file asks for the spot **by its name**,
+> with one line: `kubernetes.io/ingress.global-static-ip-name: bugsquash-ip`. GKE then builds a Google
+> load balancer on exactly this address, and *In use by* then shows that load balancer.
+> So the name must be exactly `bugsquash-ip`.
+
+**Instructor, for HTTPS later:** point the domain at the address now, so DNS is ready long before
+Stage 10. In Cloudflare: an `A` record `k8s` → this address, **DNS only** (grey cloud).
 
 ## 3. Install the tools on your laptop (once)
 

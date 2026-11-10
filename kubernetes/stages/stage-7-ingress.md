@@ -30,7 +30,19 @@ You should see your address (ours: `136.81.240.49`). In a new terminal window, s
 ## 2. Open the door
 
 Why: two rules, like the nginx proxy had: `/api…` goes to the backend Service, everything else to
-the frontend Service.
+the frontend Service. And one line that finally uses the address you reserved in Stage 0.
+
+Look at the top of `manifests/07-ingress.yaml` first:
+
+```yaml
+metadata:
+  name: bugsquash
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: bugsquash-ip   # the NAME you reserved in Stage 0
+```
+
+This annotation is the whole connection: GKE reads it, finds the reserved address called
+`bugsquash-ip`, and puts the load balancer on it. No IP number appears in any file. Now apply it:
 
 ```console
 laptop$ kubectl apply -f manifests/07-ingress.yaml
