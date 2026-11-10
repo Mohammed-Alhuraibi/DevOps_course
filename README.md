@@ -25,8 +25,9 @@ public top-10 leaderboard under a rank title from "Intern" to "10x Engineer".
 The game is just the excuse. The real subject is the **path code travels** from your laptop to a real
 website: you run the stack locally with Docker Compose, promote changes through `dev -> test -> main`,
 let GitHub Actions test, build and push the images, and then take them, stage by stage, to a Google
-Cloud VM that serves **https://devops.gulfheight.com**. There is deliberately no Kubernetes: one VM and
-one Compose file, so every moving part stays visible.
+Cloud VM that serves **https://devops.gulfheight.com**. The first chapters deliberately use no Kubernetes: one VM
+and one Compose file, so every moving part stays visible. Then [Part 6](#part-6-kubernetes) moves the same game
+to a Kubernetes cluster on Google Cloud.
 
 ## Table of contents
 
@@ -39,7 +40,8 @@ one Compose file, so every moving part stays visible.
 - [Part 3: Git branching strategy](#part-3-git-branching-strategy)
 - [Part 4: GitHub Actions and secrets](#part-4-github-actions-and-secrets)
 - [Part 5: The deployment journey](#part-5-the-deployment-journey)
-- [Part 6: Troubleshooting](#part-6-troubleshooting)
+- [Part 6: Kubernetes](#part-6-kubernetes)
+- [Part 7: Troubleshooting](#part-7-troubleshooting)
 - [API reference](#api-reference)
 - [Environment variables](#environment-variables)
 - [Make it your own](#make-it-your-own)
@@ -120,7 +122,8 @@ one Compose file, so every moving part stays visible.
 │   ├── tls.sh                   Stage 3 shortcut: issue / renew / status, via the certbot container
 │   ├── systemd/                 bugsquash-tls-renew.service + .timer: renewal twice a day
 │   └── deploy.sh                Stage 4: pull, up --wait, reload the proxy, smoke tests, prune
-└── ansible/                     Stage 5 code: provision.sh, site.yml, backup.yml, roles/
+├── ansible/                     Stage 5 code: provision.sh, site.yml, backup.yml, roles/
+└── kubernetes/                  Part 6: the Kubernetes lesson (pages, manifests/, images/)
 ```
 
 Every config file is heavily commented on purpose: the comments explain *why* each line is there.
@@ -581,7 +584,18 @@ docker stats --no-stream                  # memory against the cgroup limits
 ./deploy/deploy.sh sha-1a2b3c4            # deploy or roll back to an exact build (Stage 4+)
 ```
 
-## Part 6: Troubleshooting
+## Part 6: Kubernetes
+
+![What we'll build on Kubernetes: Bug Squash Arena on a regional Google Kubernetes Engine cluster, one copy of the frontend and backend in each of three zones behind one Google load balancer](kubernetes/images/slides/k8s-00-what-we-build.svg)
+
+The same game, the same images, now on a **regional Google Kubernetes Engine (GKE) cluster** at
+`k8s.gulfheight.com`: three copies in three zones, self-healing, rolling updates without downtime, and a
+live demo where a worker node is switched off and the site keeps working. Eleven short pages, each with
+one slide and hands-on steps in Google Cloud Shell; about two hours.
+
+Start at **[kubernetes/README.md](kubernetes/README.md)**. Prerequisite: [Containers and Docker](docs/containers-and-docker.md).
+
+## Part 7: Troubleshooting
 
 **Local development**
 
