@@ -871,16 +871,16 @@ def slide_10():
                 out.append(pod(nx + 16, ny + 204, pw, 56, "postgresql", "postgres"))
                 out.append(disk(nx + 28 + pw + 8, ny + 196, 46, 64))
                 out.append(text(nx + 28 + pw + 66, ny + 224, "its disk", 17, 600, TEXT))
-                out.append(text(nx + 28 + pw + 66, ny + 246, "zone a only", 16.5, 400, CAP))
+                out.append(text(nx + 28 + pw + 66, ny + 246, "one zone only", 16.5, 400, CAP))
     a = nodes[1]
     out.append(arrow([(a[0] + 20, a[1] + 150), (nodes[0][0] + nodes[0][2] - 8, a[1] + 150)], "new"))
     out.append(arrow([(a[0] + a[2] - 20, a[1] + 150), (nodes[2][0] + 8, a[1] + 150)], "new"))
-    out.append(note(X0, 712, X1 - X0, 80, "Honest weak spot: one Postgres pod, one disk in zone a",
-                    "Lose zone a and the API waits for it. Production uses Cloud SQL or a replicated database."))
+    out.append(note(X0, 712, X1 - X0, 80, "Honest weak spot: one Postgres pod, one disk in one zone",
+                    "Lose THAT zone and the API waits for it. Stop a node in another zone. Production: Cloud SQL."))
     return out, ("High availability: pods are spread over zones a, b and c; when the instructor stops the node in zone b, the "
                  "load balancer keeps sending visitors to the ready pods in zones a and c, and after about 30 seconds Kubernetes "
                  "re-creates the two lost pods there; the control plane is replicated by Google; the weak spot is the single "
-                 "Postgres pod with its disk in zone a.")
+                 "Postgres pod with its disk in one zone (in this picture: zone a).")
 
 
 # ---------------------------------------------------------------------------
