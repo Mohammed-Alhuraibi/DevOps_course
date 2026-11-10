@@ -27,10 +27,15 @@ Create** (click **Enable** if the console asks for the Kubernetes Engine API). C
 | Name | `bugsquash` |
 | Location type | **Regional**, region `europe-central2` (zones a, b and c by default) |
 | Release channel | Regular (the default) |
-| Node pool `default-pool`: number of nodes | **1** (it counts per zone, so 3 nodes in all) |
-| Nodes: machine type | `e2-medium` (2 shared vCPUs and 4 GB, like the course VM) |
-| Nodes: boot disk size | **30** GB |
+| **NODE POOLS → default-pool → Number of nodes (per zone)** | **1**, NOT the default 3 (it counts per zone, so 3 nodes in all) |
+| **default-pool → Nodes**: machine type | `e2-medium` (2 shared vCPUs and 4 GB, like the course VM) |
+| **default-pool → Nodes**: boot disk size | **30** GB |
 | Everything else | the default |
+
+> [!WARNING]
+> **Number of nodes is per zone.** Left at the default 3, a regional cluster gets 3 × 3 = **9 nodes**:
+> nine public IPs (more than a free-trial project allows: *Insufficient quota, IP Addresses 113%*) and
+> three times the cost. With **1**, you get 3 nodes, one per zone.
 
 Click **Create**. You should see `bugsquash` in the list with a spinner, then a green check, 3
 nodes and version `1.36.x` (about 4 minutes in our test). Read [Stage 1](stage-1-explore-the-cluster.md)'s
@@ -176,6 +181,7 @@ Next: what exactly did you just rent? [Stage 1: The big picture](stage-1-explore
 
 | Symptom | Fix |
 |---------|-----|
+| *Insufficient quota*: **IP Addresses 113%** when you click Create | Number of nodes was left at 3 per zone (9 nodes). Set **NODE POOLS → default-pool → Number of nodes (per zone)** to **1**; the estimate drops to a third and the quota fits. |
 | `command not found: gcloud` (or `kubectl`) | The CLI is installed but your shell does not know its folder yet. Open a **new** terminal; if that does not help, add it to your shell's start file, for example `echo 'source ~/google-cloud-sdk/path.zsh.inc' >> ~/.zshrc` (bash: `path.bash.inc` and `~/.bashrc`; use the folder you installed to), then open a new terminal. |
 | The console asks to enable the Kubernetes Engine API | Click **Enable**, wait a minute, then **Create** again. |
 | Creating fails with a quota error for CPUs | The three nodes need 6 vCPUs. Stop other VMs in the project (the course VM uses 2) or ask for more quota (*IAM & Admin → Quotas*). |
