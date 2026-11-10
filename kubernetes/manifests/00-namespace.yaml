@@ -1,4 +1,4 @@
-# Step 2 - a NAMESPACE is a folder inside the cluster.
+# Page 00 - a NAMESPACE is a folder inside the cluster.
 # Everything this lesson creates lives in "bugsquash", so one command
 # (kubectl delete namespace bugsquash) cleans it all up at the end.
 apiVersion: v1

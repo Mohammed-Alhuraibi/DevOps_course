@@ -1,6 +1,6 @@
-# Step 8 - an INGRESS: the one public door, like the nginx proxy of the Docker stages.
+# Page 07 - an INGRESS: the one public door, like the nginx proxy of the Docker stages.
 # On GKE, applying this file makes Google create a real cloud load balancer
-# with the fixed IP "bugsquash-ip" (reserved in step 8), and route by path:
+# with the fixed IP "bugsquash-ip" (reserved on page 00), and route by path:
 #   /api...   -> the backend Service    (API calls from the game in the browser)
 #   /...      -> the frontend Service   (the HTML, CSS and JS files)
 apiVersion: networking.k8s.io/v1

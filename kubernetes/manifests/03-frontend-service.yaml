@@ -1,4 +1,4 @@
-# Step 5 - a SERVICE: one stable name in front of changing pods.
+# Page 04 - a SERVICE: one stable name in front of changing pods.
 # Pods come and go (new names, new IPs). The Service "frontend" stays, and
 # spreads requests over every READY pod labelled app=frontend.
 # Inside the cluster it is simply reachable as http://frontend:8080
@@ -7,7 +7,7 @@ kind: Service
 metadata:
   name: frontend
   annotations:
-    # GKE only (ignored elsewhere): the Google load balancer of step 8 sends
+    # GKE only (ignored elsewhere): the Google load balancer of page 07 sends
     # requests straight to the pods instead of hopping through a node.
     cloud.google.com/neg: '{"ingress": true}'
 spec:

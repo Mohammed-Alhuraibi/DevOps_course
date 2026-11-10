@@ -1,4 +1,4 @@
-# Step 7 - the BACKEND API: 3 copies, configured by the ConfigMap and Secret.
+# Page 06 - the BACKEND API: 3 copies, configured by the ConfigMap and Secret.
 # The backend keeps no data of its own (it is "stateless": players and scores
 # live in Postgres), so Kubernetes can run, kill and move copies freely.
 apiVersion: apps/v1
@@ -44,7 +44,7 @@ spec:
           lifecycle:
             preStop:
               exec: { command: ["sleep", "15"] }
-      # ---- High availability (Step 10): one copy per zone, fast failover ----
+      # ---- High availability (page 09): one copy per zone, fast failover ----
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
@@ -62,7 +62,7 @@ kind: Service
 metadata:
   name: backend
   annotations:
-    # GKE only (ignored elsewhere): the Google load balancer of step 8 sends
+    # GKE only (ignored elsewhere): the Google load balancer of page 07 sends
     # requests straight to the pods instead of hopping through a node.
     cloud.google.com/neg: '{"ingress": true}'
 spec:

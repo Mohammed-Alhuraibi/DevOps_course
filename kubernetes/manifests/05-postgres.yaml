@@ -1,4 +1,4 @@
-# Step 7 - STORAGE: a database whose data outlives its pod.
+# Page 06 - STORAGE: a database whose data outlives its pod.
 # Three objects, separated by "---":
 #   PersistentVolumeClaim  "I need a 5 GiB disk" (on GKE: a Google Persistent Disk)
 #   Deployment             one Postgres pod that mounts that disk
@@ -19,7 +19,7 @@ kind: Deployment
 metadata:
   name: postgres
 spec:
-  replicas: 1                     # a database is NOT copied like the web pods (see step 10)
+  replicas: 1                     # a database is NOT copied like the web pods (see page 09)
   strategy:
     type: Recreate                # stop the old pod before starting a new one: one writer per disk
   selector:
@@ -36,7 +36,7 @@ spec:
           ports:
             - containerPort: 5432
           env:
-            # Settings from the ConfigMap, the password from the Secret (step 6).
+            # Settings from the ConfigMap, the password from the Secret (page 05).
             - name: POSTGRES_DB
               valueFrom: { configMapKeyRef: { name: bugsquash-config, key: POSTGRES_DB } }
             - name: POSTGRES_USER

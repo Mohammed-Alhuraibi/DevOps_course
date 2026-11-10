@@ -1,4 +1,4 @@
-# Step 3 - a POD: the smallest thing Kubernetes runs.
+# Page 02 - a POD: the smallest thing Kubernetes runs.
 # One pod = one (or a few) containers that share an IP address.
 # Every Kubernetes file has the same four parts:
 #   apiVersion + kind   WHAT this is
