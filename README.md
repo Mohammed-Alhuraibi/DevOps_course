@@ -41,6 +41,7 @@ to a Kubernetes cluster on Google Cloud.
 - [Part 4: GitHub Actions and secrets](#part-4-github-actions-and-secrets)
 - [Part 5: The deployment journey](#part-5-the-deployment-journey)
 - [Part 6: Kubernetes](#part-6-kubernetes)
+- [Game day: revision and incident theater](game-day/README.md)
 - [Part 7: Troubleshooting](#part-7-troubleshooting)
 - [API reference](#api-reference)
 - [Environment variables](#environment-variables)
