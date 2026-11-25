@@ -76,8 +76,11 @@ mistake is caught where it is cheap, not in front of users.
 
 <details><summary><b>Answer</b></summary>
 
-`latest` changes every day, so it can't tell you **what** is running. `sha-dcb0790` is one exact git
-commit. You always know which code runs where, and a rollback means "run the previous tag".
+`latest` changes every day, so it can't tell you **what** is running. `sha-dcb0790` names one exact git
+commit, so you know which code runs where, and a rollback means "run the previous tag".
+
+One catch: a tag is still a **label**, and whoever can push to the registry could move it. Only the
+image **digest** (`image@sha256:…`) can never change. Our pipeline simply never reuses a `sha-` tag.
 </details>
 
 ---
@@ -147,8 +150,7 @@ control plane.) In production you would use a managed, replicated database such 
 <details><summary><b>Answer</b></summary>
 
 **No.** Replication copies the mistake to every replica within milliseconds. **High availability**
-protects you from *broken machines*; **backups** protect you from *broken data*. You need both, and you
-need to have tried a restore. You'll see why in incident 5.
+protects you from *broken machines*; **backups** protect you from *broken data*. You need both.
 </details>
 
 ---
@@ -181,17 +183,40 @@ Pod → **C**, Deployment → **D**, Service → **A**, Ingress → **B**.
 
 <details><summary><b>Answer</b></summary>
 
-Pods are replaced **one at a time**, traffic goes only to pods that are **ready**, and the old pod
-**pauses before stopping** (the 15-second `preStop`) so the load balancer stops sending it visitors
-first. Hold on to that last part: it's incident 2.
+Pods are replaced **one at a time**, and traffic goes only to pods that are **ready**. The old pods keep
+serving until new ones can take over.
 </details>
 
-### 15. True or false: a Kubernetes Secret is encrypted.
+### 15. `kubectl get secret … -o yaml` shows `password: cGFzc3dvcmQ=`. Is that value encrypted?
 
 <details><summary><b>Answer</b></summary>
 
-**False.** It is only **base64-encoded**: one command decodes it. Protect who can read it (access
-rules), and turn on encryption at rest in the cluster.
+**No.** It is only **base64-encoded**: `echo cGFzc3dvcmQ= | base64 -d` prints `password`. GKE encrypts
+the disks underneath, but anyone **allowed to read** the Secret sees the value. So the real protection is
+**who can read it** (access rules).
+</details>
+
+---
+
+## Round 6: Secrets and infrastructure as code
+
+### 16. Our pipeline pushes images to Docker Hub. Where does it keep the Docker Hub password, and who can read it?
+
+<details><summary><b>Answer</b></summary>
+
+In **GitHub Actions secrets** (`DOCKER_HUB_ACCESS_TOKEN`), never in the repository. GitHub hides the value
+in the logs (`***`), but **every step of the job** can read it while it runs, including code that other
+people wrote. And it's a token with an expiry date: when it expires, the pipeline stops. That happened to
+our own `CD (main)` pipeline in November 2026.
+</details>
+
+### 17. We can delete our VM and rebuild everything with one Ansible command. What is that idea called, and why does it matter?
+
+<details><summary><b>Answer</b></summary>
+
+**Infrastructure as Code (IaC):** the server is described in files in Git, not built by hand. Every
+change is reviewed like code, every rebuild is identical, and a broken server is replaced, not repaired
+("cattle, not pets"). [Stage 5](../stages/stage-5-ansible.md).
 </details>
 
 ---

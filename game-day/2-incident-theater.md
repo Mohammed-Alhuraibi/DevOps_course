@@ -2,264 +2,387 @@
 
 [Game day](README.md) · [← Part 1: Quick revision](1-quick-revision.md) · **Part 2: Incident theater**
 
-Six true stories of things going wrong. Three happened to **us** while building this course, and three
-made world news. You are the on-call engineer.
+Six true incidents. One happened to us while building this course; five made world news. **You are the
+on-call engineer.**
 
-**How each round works:**
+**Every incident works the same way:**
 
-1. Read the timeline aloud, one step at a time.
-2. Ask the question. The room diagnoses out loud: guess, argue, ask questions back.
-3. Stuck after 30 seconds? Click **Hint**.
-4. Click **What really happened**: the cause, the fix and the lesson.
+1. **The setting** is visible: who, and what they were doing.
+2. **What happened** is hidden: open one step at a time and read it aloud.
+3. **Your call:** the room diagnoses out loud. Guess, argue, ask questions back.
+4. **Hint:** if the room is stuck after 30 seconds.
+5. **The answer:** the root cause, the fix, the DevOps practice, and where it is in our course.
 
 > [!TIP]
-> Split the room into two teams (left and right) and keep score on the board: one point for the right
-> cause, one for a good fix. No googling.
+> Two teams (left and right of the room), points on the board: one for the right cause, one for a good
+> fix. The narrator answers only **yes or no** questions ("Was it the network?" "No."). No googling.
 
 ---
 
-## Incident 1: It works once, fails in a loop
+## Incident 1: The update that dropped requests
 
-*Happened to your instructor, last week.*
+*Happened to us while building the Kubernetes lesson.*
 
-1. **14:05.** Live demo in two hours. One request to the site answers **200**. Perfect.
-2. **14:06.** The same request in a loop, for the demo, prints **`404 000 000`**, again and again.
-3. **14:07.** Same URL, same laptop, same minute. One command works; the loop fails.
+**The setting.** Bug Squash runs on Kubernetes (GKE) with 3 frontend pods behind Google's load
+balancer. We ship a new version while a loop sends one request per second, to prove that nobody notices.
+
+<details><summary><b>Step 1</b>: the update starts</summary>
+
+`kubectl set image` starts a rolling update: pods are replaced one at a time.
+</details>
+
+<details><summary><b>Step 2</b>: the loop</summary>
+
+Most answers are `200`, but some are `000`, which means curl got **no answer at all**.
 
 ```text
-❯ curl -s -o /dev/null -w "%{http_code}" http://$IP/
-200
-❯ while true; do curl -s -o /dev/null -w "%{http_code} " http://$IP/\; sleep 2; done
-404 000 000 404 000 000 404 000 000 404 ^C
+200 200 000 200 200 200 000 000 200 200 …
 ```
 
-> **Your call:** why does the loop fail? Look very closely at what was typed.
-
-<details><summary><b>Hint</b></summary>
-
-Every round prints **three** codes, and the loop races: it never waits. Count the words after `curl`.
+7 of 124 requests got no answer.
 </details>
 
-<details><summary><b>What really happened</b></summary>
-
-- **Cause:** the shell (zsh's *url-quote-magic*) silently added a **`\`** before the **`;`**. So the
-  semicolon no longer ended the command, and curl received three addresses: `/;` (404), `sleep` (000)
-  and `2` (000). The `sleep` never ran.
-- **Fix:** put the URL in quotes, `"http://$IP/"`. The shell leaves it alone, and the loop prints
-  `200 200 200`.
-- **Lesson:** when the result makes no sense, compare what you **think** you ran with what **really** ran.
-- **In our course:** every URL in the Kubernetes docs is now quoted, and
-  [Stage 8](../kubernetes/stages/stage-8-rolling-updates.md) lists this exact symptom.
-
-*Ask the room:* who has copied a command from a web page and seen it behave differently? (Smart quotes,
-invisible characters, line breaks.)
-</details>
-
----
-
-## Incident 2: The update that dropped requests
-
-*Happened while building the Kubernetes lesson.*
-
-1. We update the game from v1 to v2 on Kubernetes, one pod at a time.
-2. A loop calls the site twice a second during the update.
-3. Most answers are 200, but **7 of 124** get no answer at all (`000`).
-4. Kubernetes reports: *rollout successful*. Every new pod was Ready.
+<details><summary><b>Step 3</b>: Kubernetes is happy</summary>
 
 ```text
-$ kubectl set image deployment/frontend frontend=alhuraibisaeed/bugsquash-frontend:sha-dcb0790
-loop: 200 200 000 200 200 200 000 000 200 200 …
 $ kubectl rollout status deployment/frontend
 deployment "frontend" successfully rolled out
 ```
 
-> **Your call:** every pod was "ready". So who sent visitors to a pod that was already gone?
+And every **new** pod was Ready before it received traffic.
+</details>
+
+> **Your call:** the new pods were ready. So where did those 7 requests go?
 
 <details><summary><b>Hint</b></summary>
 
-Who stands between the visitors and the pods? How quickly does it learn that a pod is stopping?
+Look at the **old** pods, not the new ones. When an old pod is told to stop, how quickly does the load
+balancer find out?
 </details>
 
-<details><summary><b>What really happened</b></summary>
+<details><summary><b>The answer</b></summary>
 
-- **Cause:** an old pod stopped **immediately** when Kubernetes told it to. Google's load balancer kept
-  sending it visitors for a few more seconds.
+- **Root cause:** an old pod stopped **immediately** when Kubernetes told it to. Google's load balancer
+  kept sending it visitors for a few more seconds, and they got no answer.
 - **Fix:** a **`preStop` pause** of 15 seconds. The pod waits, the load balancer stops sending it
-  visitors, and only then does the app shut down. Result: **520 of 520** requests OK.
-- **Lesson:** zero downtime is designed, not free. **Drain before you stop.**
-- **In our course:** [Stage 8](../kubernetes/stages/stage-8-rolling-updates.md) and the `preStop` lines in
-  `kubernetes/manifests/02` and `06`.
-
-*Ask the room:* where else must you drain first? (Server maintenance, database failover, scaling down.)
+  traffic, and only then does the app exit. Result: **520 of 520** requests OK.
+- **DevOps practice: zero-downtime deployment.** It doesn't come for free. **Drain before you stop.**
+- **In our course:** [Kubernetes Stage 8](../kubernetes/stages/stage-8-rolling-updates.md) and the
+  `preStop` lines in `kubernetes/manifests/02` and `06`.
+- **Show it (if your cluster still runs):** remove the `preStop` lines, apply, run Stage 8's loop during
+  an update, and watch the `000`s come back.
 </details>
 
 ---
 
-## Incident 3: HTTPS that would have taken the site down
+## Incident 2: $460 million in 45 minutes
 
-*Caught while building the Kubernetes lesson, minutes before it reached visitors.*
+*Knight Capital, a US stock-trading firm, 1 August 2012. Source: the US SEC order.*
 
-1. **Goal:** the padlock on `k8s.gulfheight.com`. One file does two things: requests the certificate
-   and sends every `http://` visitor to `https://`.
-2. `kubectl apply`: all green. The certificate says **Provisioning** (that takes 15 to 60 minutes).
-3. Meanwhile, every visitor on `http://` is redirected to `https://`…
-4. …where there is no certificate yet. The browser shows an error page.
+**The setting.** Knight's software sends buy and sell orders to the stock market. A new version must run
+on all **8 production servers** before the market opens on 1 August.
 
-```text
-$ kubectl apply -f https.yaml
-managedcertificate created, redirect created
-$ kubectl get managedcertificate
-bugsquash-cert   Provisioning
-$ curl -I http://k8s.gulfheight.com/
-HTTP/1.1 301 Moved Permanently  →  https://k8s.gulfheight.com/
-```
+<details><summary><b>Step 1</b>: the deploy</summary>
 
-> **Your call:** what went wrong, and how would you roll this out instead?
+Between 27 and 31 July, an engineer copies the new version onto the 8 servers **by hand**. No second
+person checks it, and nothing checks it automatically.
+</details>
+
+<details><summary><b>Step 2</b>: 08:01, before the market opens</summary>
+
+The system sends **97 automatic error e-mails** to the team. Nobody treats them as an alarm.
+</details>
+
+<details><summary><b>Step 3</b>: 09:30, the market opens</summary>
+
+**One** of the 8 servers starts sending **millions of orders nobody asked for**. The other 7 behave
+normally.
+</details>
+
+<details><summary><b>Step 4</b>: the rollback</summary>
+
+Nobody understands why. The team **rolls back** the new code on the servers… and now **all 8** go wild.
+</details>
+
+<details><summary><b>Step 5</b>: 45 minutes later</summary>
+
+Finally stopped. About 4 million trades, more than **$460 million lost**. The company nearly went bankrupt
+and was sold months later.
+</details>
+
+> **Your call:** 8 servers, and only one went wild. What was different about it? And why did the rollback
+> make the other 7 go wild too?
 
 <details><summary><b>Hint</b></summary>
 
-Both steps were right. Look at the **order**, and at what "Provisioning" means.
+Did the manual copy really reach all 8? And the new version **reused an old setting (a flag)**: what did
+that flag do in the old code?
 </details>
 
-<details><summary><b>What really happened</b></summary>
+<details><summary><b>The answer</b></summary>
 
-- **Cause:** the redirect was switched on **before** the certificate existed. Traffic moved to a door
-  that was still locked.
-- **Fix:** two steps. First request the certificate, while the site keeps working on HTTP. Only when it
-  says **Active**, switch on the redirect.
-- **Lesson:** before you send traffic somewhere, **check that it is ready.**
-- **In our course:** `kubernetes/manifests/08-https.yaml` and `09-https-redirect.yaml` are now separate,
-  and [Stage 10](../kubernetes/stages/stage-10-https-and-wrap-up.md) waits for *Active*.
-
-*Ask the room:* it's the same idea as a readiness probe. Which other changes need a "ready?" check
-before the switch? (DNS changes, database migrations, new versions.)
+- **Root cause:** the manual copy **missed 1 of the 8 servers**. The new version reused an old flag that,
+  in the old code, switched on a test feature that had been dead for years. On the forgotten server, the
+  old code was still there, and it woke up. The rollback put the old code back on the other 7, **but the
+  flag stayed on**, so they woke up too.
+- **Fix:** none in time. There was no check that every server ran the same version, nobody acted on the
+  97 e-mails, and there was no quick kill switch.
+- **DevOps practice: automated, identical deployments.** One build, deployed by a machine to every
+  server, then **verified**. Alerts that someone actually reads. Delete dead code; never reuse a flag.
+- **In our course:** the CI pipeline deploys the exact `sha-…` image it just built, and on Kubernetes
+  every pod of a Deployment runs the same image. *But* our manual stages fall back to the `latest` tag:
+  can you always say which version runs on our VM?
 </details>
 
 ---
 
-## Incident 4: $440 million in 45 minutes
+## Incident 3: One file, 8.5 million blue screens
 
-*Knight Capital, 1 August 2012. Source: the US SEC report.*
+*CrowdStrike, a security company, 19 July 2024.*
 
-1. **The night before.** New trading software is installed by hand on **8 servers**.
-2. **09:30.** The stock market opens. Within minutes come millions of orders nobody asked for.
-3. **09:45.** Nobody knows why. The team rolls back the new code… and it gets **worse**.
-4. **10:15.** Finally stopped: about 4 million trades and **$440 million lost**. The company nearly goes
-   bankrupt and is sold months later.
+**The setting.** CrowdStrike's security agent runs on millions of Windows computers in companies around
+the world. It receives small content updates many times a day, and every connected computer downloads them
+within minutes.
 
-> **Your call:** what would you look for? And how can a rollback make things worse?
+<details><summary><b>Step 1</b>: 04:09 UTC</summary>
+
+A routine content update goes out. An automatic checker had approved it.
+</details>
+
+<details><summary><b>Step 2</b>: minutes later</summary>
+
+The computers that downloaded it crash with a blue screen. Airports, hospitals, banks and TV stations
+stop.
+</details>
+
+<details><summary><b>Step 3</b>: 05:27 UTC</summary>
+
+CrowdStrike pulls the update, **78 minutes** after sending it. Too late: about **8.5 million** Windows
+machines already have it, and most of them crash again on every restart.
+</details>
+
+> **Your call:** the bad file was online for only 78 minutes, and it still broke 8.5 million machines. How
+> should CrowdStrike have shipped it, so that a bad file breaks 1,000 machines instead?
 
 <details><summary><b>Hint</b></summary>
 
-Were all 8 servers really the same? And besides the code, what else was changed?
+Did every computer in the world need the update in the **same hour**? How do our rolling updates decide
+whether to continue?
 </details>
 
-<details><summary><b>What really happened</b></summary>
+<details><summary><b>The answer</b></summary>
 
-- **Cause:** the manual install **missed 1 of the 8 servers**. The new software reused an old setting
-  (a flag), which woke up old, dead code on that forgotten server. The rollback removed the new code
-  from the other 7, but the setting stayed on, so they ran the old code too.
-- **Fix:** there was no quick, safe kill switch, and no check that all servers ran the same version.
-- **Lesson:** **the same deploy, on every server, automated.** Delete dead code; never reuse a setting
-  for something new.
-- **In our course:** CI builds **one** image, and every copy runs exactly that image (`sha-…` tags) in
-  dev, test and main.
-
-*Ask the room:* why do we tag images with the git commit? (So we always know exactly what runs where.
-Knight didn't.)
+- **Root cause:** the checker itself had a bug, so the faulty file passed. Then it went to **every
+  connected computer at once**: nothing tried it on a small group first.
+- **Fix:** mostly by hand, one machine at a time: start in Safe Mode and delete the file (encrypted
+  laptops each needed a recovery key). It took days. Afterwards, CrowdStrike started rolling out content
+  updates in stages.
+- **DevOps practice: roll out gradually.** First a few machines (a *canary*), then a few percent, then
+  everyone. Watch health at every step, and **stop automatically** at the first sign of trouble.
+- **In our course:** a rolling update replaces **one pod at a time** and continues only while new pods are
+  ready, and `dev → test → main` stops bad code before production. Where would you add a canary?
 </details>
 
 ---
 
-## Incident 5: `rm -rf` on the wrong server
+## Incident 4: 300 GB gone in seconds
 
 *GitLab.com, 31 January 2017.*
 
-1. **Late evening.** Spammers overload the database, and the backup copy (the *replica*) falls behind.
-2. A tired engineer decides to wipe the replica's data folder and start it again.
-3. He runs the delete… in the terminal of the **main** database, not the replica. He stops it after a
-   second or two.
-4. About 300 GB are gone. "No problem: we have **five** backup methods."
+**The setting.** GitLab.com hosts code for millions of developers. Its data lives in a main database,
+with a second copy (a *replica*) that follows it. The team has **five** backup methods.
 
-```text
-db1$ # meant for the replica (db2)...
-db1$ sudo rm -rf <database folder>
-^C
-```
+<details><summary><b>Step 1</b>: evening</summary>
 
-> **Your call:** five backup methods. How many of them do you think worked? (Vote: 0 to 5.)
+Spammers overload the database. The replica falls behind and stops copying.
+</details>
+
+<details><summary><b>Step 2</b>: late at night</summary>
+
+A tired engineer decides to wipe the replica's data and copy it again from scratch. He has terminals open
+to **both** servers.
+</details>
+
+<details><summary><b>Step 3</b>: the command</summary>
+
+He runs the delete command in the wrong terminal: the **main** database. He notices within seconds, but
+about 300 GB are already gone.
+</details>
+
+<details><summary><b>Step 4</b>: "no problem"</summary>
+
+"We have five backup methods." The team starts checking them, one by one.
+</details>
+
+> **Your call:** vote. Of the five backup methods, how many gave them a usable backup? (0 to 5) Then: what
+> would you change so that this can never happen again?
 
 <details><summary><b>Hint</b></summary>
 
 When had anyone last **restored** one of those backups?
 </details>
 
-<details><summary><b>What really happened</b></summary>
+<details><summary><b>The answer</b></summary>
 
-- **Cause:** none of the five methods gave a usable recent backup. Some had been **failing silently**
-  for a long time (wrong versions, alert e-mails that never arrived), and nobody had tried a restore.
-- **Fix:** they found a copy made for testing **6 hours** earlier. Six hours of issues, comments and
-  merge requests were lost. They streamed the whole recovery live on YouTube.
-- **Lesson:** a backup you have never restored is a **hope**, not a backup.
-- **In our course:** Stage 5 (Ansible) backs up the database and the certificate, and restores them on a
-  new VM. See [Stage 5](../stages/stage-5-ansible.md).
-
-*Ask the room:* how would you avoid typing into the wrong server? (A different prompt colour for
-production, read-only access by default, automation instead of manual commands.) And: when did you
-last restore a backup of anything you own?
+- **Root cause:** a manual command, typed into production late at night, on the wrong server. And
+  in GitLab's own words, of the five backup methods "none are working reliably or set up in the first
+  place". The nightly database dump had been failing silently (a version mismatch, and the failure
+  e-mails never arrived), the cloud disk snapshots were not switched on for the database, and nobody had
+  ever tested a restore.
+- **Fix:** luck. Disk snapshots normally ran only once a day, but an engineer had happened to take one by
+  hand **6 hours** earlier, to test something. They restored from it and lost 6 hours of issues, comments
+  and merge requests. They streamed the recovery live on YouTube and published everything.
+- **DevOps practice: backups you have actually restored.** Test restores regularly and alert on backup
+  failures. Make production obvious (a different prompt colour), and automate risky manual steps.
+- **In our course:** [Stage 5](../stages/stage-5-ansible.md) backs up the database and **restores** it on
+  a brand-new VM: exactly the part GitLab never tested.
 </details>
 
 ---
 
-## Incident 6: One file, 8.5 million blue screens
+## Incident 5: The Action nobody changed
 
-*CrowdStrike, 19 July 2024.*
+*The GitHub Action tj-actions/changed-files, 14-15 March 2025.*
 
-1. **Morning.** A security company sends a small configuration update to its agent on Windows PCs.
-2. **Minutes later.** Blue screens: airports, hospitals, banks, TV stations.
-3. **Reboot.** Blue screen again. The PCs can't start, so they can't download a fix.
-4. **In total:** about **8.5 million** Windows machines, all at the same time.
+**The setting.** More than **23,000** GitHub repositories use the same small, popular Action in their CI
+pipelines, written as `uses: tj-actions/changed-files@v45`. Those pipelines hold secrets: cloud keys,
+Docker Hub tokens, deploy keys.
 
-> **Your call:** two questions. How do you fix machines that cannot even start? And how should the
-> update have been shipped?
+<details><summary><b>Step 1</b>: 14 March</summary>
+
+Attackers get write access to the Action's repository and add their own code.
+</details>
+
+<details><summary><b>Step 2</b>: the tags</summary>
+
+They **move** the existing version tags, like `v45`, to point to their new code.
+</details>
+
+<details><summary><b>Step 3</b>: the next pipeline runs</summary>
+
+Every repository that runs a pipeline in the next day runs the attacker's code. **None of those teams
+changed anything** in their own repository.
+</details>
+
+<details><summary><b>Step 4</b>: the logs</summary>
+
+The code reads the secrets from the CI machine's memory and **prints them into the build log**. For public
+repositories, anyone on the internet can read that log. Secrets leak from a few hundred of them.
+</details>
+
+> **Your call:** these teams changed nothing, so why did their pipelines run the attacker's code? What
+> does `@v45` really point to?
 
 <details><summary><b>Hint</b></summary>
 
-Did all 8.5 million need to get the update in the same minute?
+A tag is a label on a commit. Who is allowed to move that label?
 </details>
 
-<details><summary><b>What really happened</b></summary>
+<details><summary><b>The answer</b></summary>
 
-- **Cause:** a faulty content file passed a broken check and went to **every customer at once**. Nothing
-  tested it on a small group first.
-- **Fix:** by hand, machine by machine: start in Safe Mode and delete the file. Encrypted laptops also
-  needed a recovery key each. It took days.
-- **Lesson:** **roll out gradually.** First a few machines (a *canary*), then a few percent, then
-  everyone, and stop at the first sign of trouble.
-- **In our course:** `dev → test → main`, and rolling updates that replace one pod at a time.
+- **Root cause:** a version **tag can be moved** by whoever controls the repository. `@v45` meant
+  "whatever the owner calls v45 today". The pipelines ran third-party code that could see all their
+  secrets.
+- **Fix:** the Action was cleaned up, and every affected team had to **rotate every secret** that might be
+  in their logs.
+- **DevOps practice: CI/CD supply-chain security.** Pin third-party code to something that can't move:
+  a commit **SHA** for Actions (`uses: owner/action@<40-character SHA>`), a **digest** for images
+  (`image@sha256:…`). Give each job only the secrets it needs. **Your pipeline is production:** protect it
+  like production.
+- **In our course:** we use tags everywhere: `actions/checkout@v7` in the workflows, `postgres:17.11-…`
+  in Compose. Tags are friendly, but they can move. Should we pin them? What would it cost us?
+- **Show it (10 seconds, in any git repo):** a tag really is just a movable label.
 
-*Ask the room:* where would you put a canary step in our pipeline?
+  ```console
+  $ git tag v45 && git log -1 --format=%h v45
+  $ git tag -f v45 HEAD~1 && git log -1 --format=%h v45     # same name, different code
+  $ git tag -d v45
+  ```
+</details>
+
+---
+
+## Incident 6: A laptop, and $6.3 billion
+
+*Binance, a cryptocurrency exchange, June to October 2026. Source: Binance's statement, as reported by
+The Hacker News, 3 November 2026.*
+
+**The setting.** Binance's wallet systems move customers' money. A team of wallet DevOps engineers runs
+them.
+
+<details><summary><b>Step 1</b>: June</summary>
+
+A wallet DevOps engineer (call him A) searches online for a popular AI tool and installs it with a **fake
+installer that contains malware**. Binance notices and changes his passwords and keys. But the attacker has
+already learned who works on the wallet team.
+</details>
+
+<details><summary><b>Step 2</b>: September</summary>
+
+A second engineer (B) is invited to a **job interview** on a job-hunting site. At the end, the
+"interviewer" asks him to download a homework project onto his **work laptop**. The project contains
+malware.
+</details>
+
+<details><summary><b>Step 3</b>: 20 October</summary>
+
+From B's laptop, the attacker uses an internal company tool to take over the accounts of more engineers,
+including A.
+</details>
+
+<details><summary><b>Step 4</b>: 29 October</summary>
+
+On A's computer, the attacker finds a **token that can deploy containers into the wallet system**. They
+deploy their own container. It talks to the internal service that signs payments, and sends money out
+**outside the normal withdrawal checks**. Binance estimates the loss at about **$6.3 billion**.
+</details>
+
+> **Your call:** the attacker only ever controlled **laptops**. Why was a laptop enough to move billions?
+> What would you change, so that it isn't?
+
+<details><summary><b>Hint</b></summary>
+
+Who should be able to deploy into the money system: a person's laptop, or the pipeline? And how long
+should a deploy token live?
+</details>
+
+<details><summary><b>The answer</b></summary>
+
+- **Root cause:** not one mistake, but several safety nets missing (Binance called it "not a single
+  isolated breach"). The most DevOps one is that **a long-lived deploy token for production sat on a
+  laptop**, so any malware on that laptop could deploy anything. Also, one deployed container could reach
+  the payment-signing service, and untrusted software reached work machines twice.
+- **Fix (Binance):** rebuilt the wallet system in a new environment, replaced the affected laptops,
+  revoked the engineers' tokens and credentials, rebuilt access controls, and added monitoring for unusual
+  behaviour. Investigators link the attack to North Korea's TraderTraitor group.
+- **DevOps practice: least privilege and short-lived secrets.** Production deploys come from the
+  **pipeline**, after review, not from a laptop. Tokens expire within minutes or hours, and they are kept
+  in a secret store, not in files. A deployed container reaches only what it needs. Treat every developer
+  laptop as a way in.
+- **In our course, honestly:** our CI deploy key is `restrict`ed and the `deploy` user has no sudo. But
+  in the Kubernetes lesson we deployed with `kubectl` **from our laptops with full admin rights**, and the
+  Ansible vault password is a file on the laptop. **What could an attacker do with your laptop today?**
 </details>
 
 ---
 
 ## Wrap-up: six incidents, six habits
 
-| Incident | Habit |
-|---|---|
-| 1. The zsh loop | Compare what you think you ran with what really ran. |
-| 2. Dropped requests | Drain before you stop. |
-| 3. HTTPS in the wrong order | Check it is ready before you send traffic. |
-| 4. Knight Capital | The same deploy on every server, automated. |
-| 5. GitLab | Test your restores, not just your backups. |
-| 6. CrowdStrike | Roll out gradually. |
+| # | Incident | DevOps practice | The habit |
+|:-:|---|---|---|
+| 1 | Our dropped requests | zero-downtime deployment | Drain before you stop. |
+| 2 | Knight Capital | automated, identical deployments | One build, deployed by a machine, verified on every server. |
+| 3 | CrowdStrike | gradual rollout | Canary first; stop automatically at the first sign of trouble. |
+| 4 | GitLab | backups | Test your restores, not just your backups. |
+| 5 | tj-actions | supply-chain security | Pin third-party code; protect the pipeline like production. |
+| 6 | Binance | least privilege | No production power on laptops: deploy from the pipeline, with short-lived tokens. |
 
-None of these were caused by "bad people". They were caused by **missing safety nets**, and that's
-what DevOps practices are: safety nets.
+None of these happened because of "bad engineers". They happened because **safety nets were missing**,
+and that's what DevOps practices are: safety nets.
 
 ## Your turn (last 10 minutes)
 
-> **What's the worst bug you have ever caused, or almost caused? Which of today's six habits would have
-> saved you?**
+> **Which of the six habits does our course project, or your own project, not have yet? What would it
+> take to add it?**
 
-Start with your own story to break the ice, then take 3 or 4 volunteers.
+Take 3 or 4 volunteers. Close with: pick **one** habit and add it before next week.
